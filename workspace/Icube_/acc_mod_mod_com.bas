@@ -17,8 +17,8 @@ End Sub
 ' ■ フィールドが転写先に存在するかチェック
 '-------------------------------------------------
 
-Public Function FieldExists(rs As DAO.Recordset, fieldName As String) As Boolean
+Public Function FieldExists(rs As DAO.Recordset, FieldName As String) As Boolean
     On Error Resume Next
-    FieldExists = Not IsNull(rs.Fields(fieldName).Name)
+    FieldExists = Not IsNull(rs.fields(FieldName).Name)
     On Error GoTo 0
 End Function

@@ -11,14 +11,14 @@ Option Explicit
 
 Private pConn As DAO.Database
 
-Public Sub Init(ByRef db As DAO.Database)
-    Set pConn = db
+Public Sub Init(ByRef Db As DAO.Database)
+    Set pConn = Db
 End Sub
 
 '===========================================================
 ' メソッド : ExecuteTransfer
 '===========================================================
-Public Sub ExecuteTransfer(ByVal srcTable As String, ByVal tgtTable As String, Optional ByVal keyField As String = "")
+Public Sub ExecuteTransfer(ByVal SrcTable As String, ByVal tgtTable As String, Optional ByVal KeyField As String = "")
     On Error GoTo Err_Handler
     
     ' 1. 型変換を考慮したセレクト用フィールドリストを取得
@@ -26,15 +26,15 @@ Public Sub ExecuteTransfer(ByVal srcTable As String, ByVal tgtTable As String, O
     Dim insertFields As String
     
     ' 専用のヘルパー関数で SQL の部品を作る
-    GetFieldLists srcTable, tgtTable, insertFields, selectFields
+    GetFieldLists SrcTable, tgtTable, insertFields, selectFields
     
     If insertFields = "" Then Err.Raise 1004, , "共通列がないにゃ。"
 
     ' 2. 既存レコードの削除 (型不一致を防ぐため Val関数を使用)
     Dim sqlDel As String
-    If keyField <> "" Then
+    If KeyField <> "" Then
         ' 数値型の比較でエラーが出ないよう Val() でテキストを数値化
-        sqlDel = "DELETE FROM [" & tgtTable & "] WHERE [" & keyField & "] IN (SELECT Val([" & keyField & "]) FROM [" & srcTable & "]);"
+        sqlDel = "DELETE FROM [" & tgtTable & "] WHERE [" & KeyField & "] IN (SELECT Val([" & KeyField & "]) FROM [" & SrcTable & "]);"
     Else
         sqlDel = "DELETE FROM [" & tgtTable & "];"
     End If
@@ -43,7 +43,7 @@ Public Sub ExecuteTransfer(ByVal srcTable As String, ByVal tgtTable As String, O
 
     ' 3. データの一括挿入 (空文字を Null に変換する SQL を実行)
     Dim sqlIns As String
-    sqlIns = "INSERT INTO [" & tgtTable & "] (" & insertFields & ") SELECT " & selectFields & " FROM [" & srcTable & "];"
+    sqlIns = "INSERT INTO [" & tgtTable & "] (" & insertFields & ") SELECT " & selectFields & " FROM [" & SrcTable & "];"
     
     ' 生成されたSQLをデバッグ出力（確認用）
     Debug.Print "生成されたSQL: " & Left(sqlIns, 200) & "..."
@@ -52,13 +52,13 @@ Public Sub ExecuteTransfer(ByVal srcTable As String, ByVal tgtTable As String, O
     Exit Sub
 
 Err_Handler:
-    Err.Raise Err.Number, "acc_clsTableTransfer", Err.description
+    Err.Raise Err.Number, "acc_clsTableTransfer", Err.Description
 End Sub
 
 ' --- フィールドリスト生成 (空文字を Null に置換するロジック付き) ---
 Private Sub GetFieldLists(ByVal src As String, ByVal tgt As String, ByRef outInsert As String, ByRef outSelect As String)
-    Dim fldsSrc As DAO.Fields: Set fldsSrc = pConn.TableDefs(src).Fields
-    Dim fldsTgt As DAO.Fields: Set fldsTgt = pConn.TableDefs(tgt).Fields
+    Dim fldsSrc As DAO.fields: Set fldsSrc = pConn.TableDefs(src).fields
+    Dim fldsTgt As DAO.fields: Set fldsTgt = pConn.TableDefs(tgt).fields
     Dim fSrc As DAO.Field, fTgt As DAO.Field
     Dim insList As String: insList = ""
     Dim selList As String: selList = ""
@@ -90,8 +90,9 @@ End Sub
 ' フィールド存在チェック
 Private Function FieldExists(ByVal tblName As String, ByVal fldName As String) As Boolean
     On Error Resume Next
-    Dim f As Object: Set f = pConn.TableDefs(tblName).Fields(fldName)
+    Dim f As Object: Set f = pConn.TableDefs(tblName).fields(fldName)
     FieldExists = (Err.Number = 0)
     On Error GoTo 0
 End Function
+
 

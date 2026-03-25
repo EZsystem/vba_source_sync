@@ -38,7 +38,7 @@ Public Function RangeToArray(ByVal rng As Object) As Variant
     If rng Is Nothing Then Exit Function
     
     ' セルが1つだけの場合、Valueをそのまま返すと配列にならないため補正
-    If rng.Cells.count = 1 Then
+    If rng.Cells.Count = 1 Then
         Dim arr(1 To 1, 1 To 1) As Variant
         arr(1, 1) = rng.Value
         RangeToArray = arr
@@ -48,7 +48,7 @@ Public Function RangeToArray(ByVal rng As Object) As Variant
     Exit Function
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "範囲の取得に失敗しました: " & Err.description, "Range Error", vbCritical
+    pErr.Notify_Smart_Popup "範囲の取得に失敗しました: " & Err.Description, "Range Error", vbCritical
     RangeToArray = Empty
 End Function
 
@@ -71,7 +71,7 @@ Public Sub ArrayToRange(ByVal targetRng As Object, ByVal Data As Variant)
     Exit Sub
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "データの書き込みに失敗しました: " & Err.description, "Write Error", vbCritical
+    pErr.Notify_Smart_Popup "データの書き込みに失敗しました: " & Err.Description, "Write Error", vbCritical
 End Sub
 
 '===========================================================
@@ -80,9 +80,9 @@ End Sub
 '        col - チェックする列番号 (Default: 1)
 ' 戻り値 : Long (最終行番号)
 '===========================================================
-Public Function GetLastRow(ByVal ws As Object, Optional ByVal col As Long = 1) As Long
+Public Function GetLastRow(ByVal wS As Object, Optional ByVal col As Long = 1) As Long
     On Error GoTo Err_Handler
-    GetLastRow = ws.Cells(ws.Rows.count, col).End(-4162).row ' -4162 = xlUp
+    GetLastRow = wS.Cells(wS.Rows.Count, col).End(-4162).row ' -4162 = xlUp
     Exit Function
 
 Err_Handler:
@@ -95,9 +95,9 @@ End Function
 '        row - チェックする行番号 (Default: 1)
 ' 戻り値 : Long (最終列番号)
 '===========================================================
-Public Function GetLastColumn(ByVal ws As Object, Optional ByVal row As Long = 1) As Long
+Public Function GetLastColumn(ByVal wS As Object, Optional ByVal row As Long = 1) As Long
     On Error GoTo Err_Handler
-    GetLastColumn = ws.Cells(row, ws.Columns.count).End(-4159).Column ' -4159 = xlToLeft
+    GetLastColumn = wS.Cells(row, wS.Columns.Count).End(-4159).Column ' -4159 = xlToLeft
     Exit Function
 
 Err_Handler:

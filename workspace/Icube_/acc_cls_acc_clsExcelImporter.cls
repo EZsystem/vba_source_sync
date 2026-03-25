@@ -22,8 +22,8 @@ Public EndColumn      As Long   ' 終了列 (EK列なら141など)
 '===========================================================
 ' メソッド : Init
 '===========================================================
-Public Sub Init(ByRef db As DAO.Database)
-    Set pConn = db
+Public Sub Init(ByRef Db As DAO.Database)
+    Set pConn = Db
     Set pMapping = CreateObject("Scripting.Dictionary")
 End Sub
 
@@ -39,15 +39,15 @@ End Sub
 ' メソッド : ImportFromWorksheet
 ' 説明：物理置換ロジックを用いて仮テーブルへ書き込む
 '===========================================================
-Public Sub ImportFromWorksheet(ByVal ws As Object)
+Public Sub ImportFromWorksheet(ByVal wS As Object)
     Dim dataArr     As Variant
     Dim lastRow     As Long
     Dim r As Long, c As Long
     Dim rsTemp      As DAO.Recordset
     
     ' 1. Excelを配列に一括読込 (プロパティで指定された範囲を使用)
-    lastRow = ws.Cells(ws.Rows.count, StartColumn).End(-4162).row ' -4162 = xlUp
-    dataArr = ws.Range(ws.Cells(HeaderRow, StartColumn), ws.Cells(lastRow, EndColumn)).Value
+    lastRow = wS.Cells(wS.Rows.Count, StartColumn).End(-4162).row ' -4162 = xlUp
+    dataArr = wS.Range(wS.Cells(HeaderRow, StartColumn), wS.Cells(lastRow, EndColumn)).Value
     
     ' 2. 配列1行目(タイトル)を物理的に翻訳(置換)
     For c = 1 To UBound(dataArr, 2)
@@ -73,7 +73,7 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
             
             If targetField <> "SKIP_COLUMN" Then
                 On Error Resume Next
-                rsTemp.Fields(targetField).Value = dataArr(r, c)
+                rsTemp.fields(targetField).Value = dataArr(r, c)
                 On Error GoTo 0
             End If
         Next c
@@ -83,14 +83,4 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
 End Sub
 
 
-'===========================================================
-' メソッド : ImportFromWorkbook
-'===========================================================
-Public Sub ImportFromWorkbook(ByVal wb As Object, Optional ByVal sheetIndexOrName As Variant = 1)
-    On Error GoTo Err_Handler
-    If wb Is Nothing Then Err.Raise 1003, , "Workbookが無効です。"
-    Call ImportFromWorksheet(wb.Sheets(sheetIndexOrName))
-    Exit Sub
-Err_Handler:
-    pErr.Notify_Smart_Popup "ブック取込失敗: " & Err.description, "Error", vbCritical
-End Sub
+

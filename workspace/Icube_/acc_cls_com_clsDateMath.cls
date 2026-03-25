@@ -103,7 +103,7 @@ Private Function ValidateDate(y As Integer, m As Integer, d As Integer) As Boole
     Dim dt As Date
     dt = DateSerial(y, m, d)
     
-    ' DateSerialは「2月30日」を入れると自動で「3月2日」等に変換してしまうため、
-    ' 逆算して元に戻るかを確認することで、日付の正当性を厳密に判定する。
-    ValidateDate = (Year(dt) = y And Month(dt) = m And Day(dt) = d)
+    ' プロパティ名との衝突を避けるため、VBA組み込み関数であることを明示する
+    ' VBA.Year / VBA.Month / VBA.Day と記述することでエラーを回避できます
+    ValidateDate = (VBA.Year(dt) = y And VBA.Month(dt) = m And VBA.Day(dt) = d)
 End Function

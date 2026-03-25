@@ -16,7 +16,7 @@ Public Sub Run_IcubeImport_FullStep()
     Const EXCEL_END_C   As Long = 141 ' EK列
     Const KEY_FIELD     As String = "No" ' 重複削除用キー（昨日の成功に基づきNoを指定）
 
-    Dim db          As DAO.Database: Set db = CurrentDb
+    Dim Db          As DAO.Database: Set Db = CurrentDb
     Dim wsTrans     As DAO.Workspace: Set wsTrans = DBEngine.Workspaces(0)
     
     ' クラスのインスタンス化
@@ -26,7 +26,7 @@ Public Sub Run_IcubeImport_FullStep()
     Dim xlApp       As Object
     Dim wb          As Object
     Dim filePath    As String
-    Dim rsMaster    As DAO.Recordset
+    Dim RsMaster    As DAO.Recordset
     Dim isInTrans   As Boolean: isInTrans = False
     
     On Error GoTo Err_Handler
@@ -36,21 +36,21 @@ Public Sub Run_IcubeImport_FullStep()
     If filePath = "" Then Exit Sub
 
     ' --- 2. クラスの初期化と設定 ---
-    pImporter.Init db
+    pImporter.Init Db
     pImporter.TableName = TBL_TEMP
     pImporter.HeaderRow = EXCEL_HEADER
     pImporter.StartColumn = EXCEL_START_C
     pImporter.EndColumn = EXCEL_END_C
     
-    pTransfer.Init db
+    pTransfer.Init Db
 
     ' --- 3. マスタから翻訳ルールをクラスに教える ---
-    Set rsMaster = db.OpenRecordset("SELECT [タイトル名_デフォルト], [タイトル名_置換え後] FROM tbl_xl_IcubeColSetting WHERE Nz(取込フラグ, False) = True")
-    Do Until rsMaster.EOF
-        pImporter.AddMapping CStr(rsMaster![タイトル名_デフォルト]), CStr(rsMaster![タイトル名_置換え後])
-        rsMaster.MoveNext
+    Set RsMaster = Db.OpenRecordset("SELECT [タイトル名_デフォルト], [タイトル名_置換え後] FROM tbl_xl_IcubeColSetting WHERE Nz(取込フラグ, False) = True")
+    Do Until RsMaster.EOF
+        pImporter.AddMapping CStr(RsMaster![タイトル名_デフォルト]), CStr(RsMaster![タイトル名_置換え後])
+        RsMaster.MoveNext
     Loop
-    rsMaster.Close
+    RsMaster.Close
 
     ' ==========================================================
     ' トランザクション開始
@@ -59,7 +59,7 @@ Public Sub Run_IcubeImport_FullStep()
     isInTrans = True
 
     ' --- 4. 仮テーブルクリア & Excel取込 ---
-    db.Execute "DELETE FROM [" & TBL_TEMP & "];", dbFailOnError
+    Db.Execute "DELETE FROM [" & TBL_TEMP & "];", dbFailOnError
     
     Set xlApp = CreateObject("Excel.Application")
     Set wb = xlApp.Workbooks.Open(filePath, ReadOnly:=True)
@@ -83,7 +83,7 @@ Public Sub Run_IcubeImport_FullStep()
 Err_Handler:
     ' 失敗した場合は全て取り消し
     If isInTrans Then wsTrans.Rollback
-    MsgBox "失敗しました： " & Err.description, vbCritical
+    MsgBox "失敗しました： " & Err.Description, vbCritical
     If Not xlApp Is Nothing Then xlApp.Quit
 End Sub
 

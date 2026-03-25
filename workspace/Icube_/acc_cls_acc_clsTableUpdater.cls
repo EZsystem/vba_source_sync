@@ -60,7 +60,7 @@ Public Sub UpdateFieldFromField(ByVal srcFieldName As String, ByVal tgtFieldName
     On Error GoTo Err_Handler
     Do Until rs.EOF
         rs.Edit
-        rs.Fields(tgtFieldName).Value = rs.Fields(srcFieldName).Value
+        rs.fields(tgtFieldName).Value = rs.fields(srcFieldName).Value
         rs.Update
         rs.MoveNext
     Loop
@@ -88,7 +88,7 @@ Public Sub UpdateFieldByConcat(ByVal fldA As String, ByVal fldB As String, _
     On Error GoTo Err_Handler
     Do Until rs.EOF
         rs.Edit
-        rs.Fields(tgtField).Value = Nz(rs.Fields(fldA).Value, "") & separator & Nz(rs.Fields(fldB).Value, "")
+        rs.fields(tgtField).Value = Nz(rs.fields(fldA).Value, "") & separator & Nz(rs.fields(fldB).Value, "")
         rs.Update
         rs.MoveNext
     Loop
@@ -111,11 +111,11 @@ Private Function OpenRecordsetSafe() As DAO.Recordset
         sql = sql & " WHERE " & pWhereCondition
     End If
     
-    Set OpenRecordsetSafe = pConn.db.OpenRecordset(sql, dbOpenDynaset)
+    Set OpenRecordsetSafe = pConn.Db.OpenRecordset(sql, dbOpenDynaset)
     Exit Function
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "Recordsetのオープンに失敗しました: " & Err.description, "Open Error", vbCritical
+    pErr.Notify_Smart_Popup "Recordsetのオープンに失敗しました: " & Err.Description, "Open Error", vbCritical
     Set OpenRecordsetSafe = Nothing
 End Function
 
@@ -123,8 +123,8 @@ End Function
 ' 内部サブルーチン : HandleError
 '===========================================================
 Private Sub HandleError(ByVal procName As String, ByRef rs As DAO.Recordset)
-    pErr.Notify_Smart_Popup "更新中にエラーが発生しました (" & procName & "): " & Err.description, "Update Error", vbCritical
+    pErr.Notify_Smart_Popup "更新中にエラーが発生しました (" & procName & "): " & Err.Description, "Update Error", vbCritical
     If Not rs Is Nothing Then rs.Close
     ' トランザクション中断のため再スロー
-    Err.Raise Err.Number, "acc_clsTableUpdater." & procName, Err.description
+    Err.Raise Err.Number, "acc_clsTableUpdater." & procName, Err.Description
 End Sub

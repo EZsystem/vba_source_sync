@@ -65,7 +65,7 @@ Public Function FetchArray(ByVal sql As String) As Variant
     Exit Function
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "データ取得に失敗しました: " & Err.description, "Fetch Error", vbCritical
+    pErr.Notify_Smart_Popup "データ取得に失敗しました: " & Err.Description, "Fetch Error", vbCritical
     FetchArray = Empty
 End Function
 
@@ -102,6 +102,6 @@ Public Function FetchRecordset(ByVal sql As String) As Object
     Exit Function
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "接続エラー: " & Err.description, "DB Connection Error", vbCritical
+    pErr.Notify_Smart_Popup "接続エラー: " & Err.Description, "DB Connection Error", vbCritical
     Set FetchRecordset = Nothing
 End Function

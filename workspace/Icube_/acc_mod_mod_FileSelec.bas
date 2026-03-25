@@ -29,8 +29,8 @@ Public Function SelectExcelFileXLSX() As String
     Exit Function
     
 ErrHandle:
-    Debug.Print "SelectExcelFileXLSXでエラー発生: " & Err.description
-    MsgBox "エラー発生:" & vbCrLf & Err.description, vbExclamation
+    Debug.Print "SelectExcelFileXLSXでエラー発生: " & Err.Description
+    MsgBox "エラー発生:" & vbCrLf & Err.Description, vbExclamation
     SelectExcelFileXLSX = ""
 End Function
 

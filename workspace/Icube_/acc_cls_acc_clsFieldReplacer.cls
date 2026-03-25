@@ -61,8 +61,8 @@ End Sub
 ' 引数 : fieldName - 置換対象とするフィールド名
 ' 機能 : 置換を行うフィールドを限定する場合に登録する。
 '===========================================================
-Public Sub AddTargetField(ByVal fieldName As String)
-    pTargetFields.Add fieldName
+Public Sub AddTargetField(ByVal FieldName As String)
+    pTargetFields.Add FieldName
 End Sub
 
 '===========================================================
@@ -73,7 +73,7 @@ Public Sub ReplaceAll()
     On Error GoTo Err_Handler
     
     Dim rs As DAO.Recordset
-    Set rs = pConn.db.OpenRecordset(pTableName, dbOpenDynaset)
+    Set rs = pConn.Db.OpenRecordset(pTableName, dbOpenDynaset)
     
     If rs.EOF Then
         rs.Close
@@ -87,13 +87,13 @@ Public Sub ReplaceAll()
         rs.Edit
         
         ' 対象フィールドが指定されていればそれのみ、なければ全フィールドを走査
-        If pTargetFields.count > 0 Then
+        If pTargetFields.Count > 0 Then
             Dim fldName As Variant
             For Each fldName In pTargetFields
-                ProcessField rs.Fields(fldName)
+                ProcessField rs.fields(fldName)
             Next fldName
         Else
-            For Each fld In rs.Fields
+            For Each fld In rs.fields
                 ProcessField fld
             Next fld
         End If
@@ -107,7 +107,7 @@ Public Sub ReplaceAll()
     Exit Sub
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "置換中にエラーが発生しました: " & Err.description, "Replace Error", vbCritical
+    pErr.Notify_Smart_Popup "置換中にエラーが発生しました: " & Err.Description, "Replace Error", vbCritical
     If Not rs Is Nothing Then rs.Close
     Err.Raise Err.Number
 End Sub

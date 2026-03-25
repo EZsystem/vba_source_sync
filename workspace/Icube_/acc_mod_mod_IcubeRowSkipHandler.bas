@@ -15,14 +15,14 @@ Option Explicit
 ' 引数   : なし
 '=================================================
 Public Sub ApplyIcubeRowSkip()
-    Dim db As DAO.Database
+    Dim Db As DAO.Database
     Dim rs As DAO.Recordset
     Dim skipField As String
     Dim skipVal As Variant
     Dim sqlDel As String
 
-    Set db = CurrentDb
-    Set rs = db.OpenRecordset("tbl_xl_IcubeRowSkip", dbOpenSnapshot)
+    Set Db = CurrentDb
+    Set rs = Db.OpenRecordset("tbl_xl_IcubeRowSkip", dbOpenSnapshot)
 
     Do Until rs.EOF
         skipField = rs!対象フィールド名
@@ -33,16 +33,16 @@ Public Sub ApplyIcubeRowSkip()
                  "WHERE [" & skipField & "] = " & IIf( _
                      IsNumeric(skipVal), _
                      skipVal, _
-                     "'" & replace(CStr(skipVal), "'", "''") & "'" _
+                     "'" & Replace(CStr(skipVal), "'", "''") & "'" _
                  )
 
-        db.Execute sqlDel, dbFailOnError
+        Db.Execute sqlDel, dbFailOnError
         rs.MoveNext
     Loop
 
     rs.Close
     Set rs = Nothing
-    Set db = Nothing
+    Set Db = Nothing
 End Sub
 
 

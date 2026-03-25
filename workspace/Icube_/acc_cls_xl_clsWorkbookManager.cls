@@ -59,7 +59,7 @@ Public Property Let FastMode(ByVal active As Boolean)
     
     ' Calculationはブックが開いていないと操作できないため、ブック数を確認
     Dim hasWorkbook As Boolean
-    hasWorkbook = (pxlApp.Workbooks.count > 0)
+    hasWorkbook = (pxlApp.Workbooks.Count > 0)
     
     On Error Resume Next ' 予期せぬCOMエラーに対する最終ガード
     If active Then

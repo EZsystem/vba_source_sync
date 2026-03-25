@@ -51,7 +51,7 @@ Public Sub Init(Optional ByVal filePath As String = "")
 
 Err_Handler:
     Dim errDetail As String
-    errDetail = "DB接続に失敗しました。" & vbCrLf & "Path: " & pFilePath & vbCrLf & "Error: " & Err.description
+    errDetail = "DB接続に失敗しました。" & vbCrLf & "Path: " & pFilePath & vbCrLf & "Error: " & Err.Description
     Err.Raise vbObjectError + 1001, "acc_clsDbConnector.Init", errDetail
 End Sub
 
@@ -59,12 +59,12 @@ End Sub
 ' プロパティ Get : db
 ' 機能 : 保持している DAO.Database オブジェクトを返す。
 '===========================================================
-Public Property Get db() As DAO.Database
+Public Property Get Db() As DAO.Database
     ' 未初期化の場合はカレントDBで自動初期化を試みる（ガードロジック）
     If pDB Is Nothing Then
         Me.Init
     End If
-    Set db = pDB
+    Set Db = pDB
 End Property
 
 '===========================================================
@@ -85,7 +85,7 @@ Public Sub ExecuteSQL(ByVal sql As String, Optional ByVal failOnError As Boolean
     Dim options As Long
     If failOnError Then options = dbFailOnError
     
-    Me.db.Execute sql, options
+    Me.Db.Execute sql, options
 End Sub
 
 '===========================================================
@@ -98,13 +98,13 @@ Public Function OpenRecordsetSafe(ByVal sql As String) As DAO.Recordset
     On Error GoTo Err_Handler
     
     ' dbプロパティ経由で取得することで未初期化を防止
-    Set OpenRecordsetSafe = Me.db.OpenRecordset(sql, dbOpenDynaset)
+    Set OpenRecordsetSafe = Me.Db.OpenRecordset(sql, dbOpenDynaset)
     
     Exit Function
 
 Err_Handler:
     Dim errDetail As String
-    errDetail = "レコードセットの取得に失敗しました。" & vbCrLf & "SQL: " & sql & vbCrLf & "Error: " & Err.description
+    errDetail = "レコードセットの取得に失敗しました。" & vbCrLf & "SQL: " & sql & vbCrLf & "Error: " & Err.Description
     Err.Raise vbObjectError + 1002, "acc_clsDbConnector.OpenRecordsetSafe", errDetail
 End Function
 

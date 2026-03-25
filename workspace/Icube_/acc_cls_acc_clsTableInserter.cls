@@ -46,12 +46,12 @@ End Sub
 '        keyField - 重複判定に使用するキー列名
 ' 機能 : 挿入設定を登録する。
 '===========================================================
-Public Sub AddSetting(ByVal srcTable As String, ByVal tgtTable As String, ByVal keyField As String)
-    Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
-    dict("Source") = srcTable
-    dict("Target") = tgtTable
-    dict("Key") = keyField
-    pSettings.Add dict
+Public Sub AddSetting(ByVal SrcTable As String, ByVal tgtTable As String, ByVal KeyField As String)
+    Dim Dict As Object: Set Dict = CreateObject("Scripting.Dictionary")
+    Dict("Source") = SrcTable
+    Dict("Target") = tgtTable
+    Dict("Key") = KeyField
+    pSettings.Add Dict
 End Sub
 
 '===========================================================
@@ -59,7 +59,7 @@ End Sub
 ' 機能 : 登録されたすべての設定に基づき、新規レコードの挿入を実行する。
 '===========================================================
 Public Sub InsertAll()
-    If pSettings.count = 0 Then Exit Sub
+    If pSettings.Count = 0 Then Exit Sub
     
     Dim setting As Variant
     For Each setting In pSettings
@@ -95,8 +95,8 @@ Private Sub InsertNewRecords(ByVal src As String, ByVal tgt As String, ByVal key
     Exit Sub
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "挿入失敗 [" & src & " -> " & tgt & "]: " & Err.description, "Insert Error", vbCritical
-    Err.Raise Err.Number, "acc_clsTableInserter", Err.description
+    pErr.Notify_Smart_Popup "挿入失敗 [" & src & " -> " & tgt & "]: " & Err.Description, "Insert Error", vbCritical
+    Err.Raise Err.Number, "acc_clsTableInserter", Err.Description
 End Sub
 
 '===========================================================
@@ -104,8 +104,8 @@ End Sub
 ' 機能 : 2つのテーブルで共通するフィールド名をカンマ区切りで返す。
 '===========================================================
 Private Function GetCommonFieldsString(ByVal tbl1 As String, ByVal tbl2 As String) As String
-    Dim flds1 As DAO.Fields: Set flds1 = pConn.db.TableDefs(tbl1).Fields
-    Dim flds2 As DAO.Fields: Set flds2 = pConn.db.TableDefs(tbl2).Fields
+    Dim flds1 As DAO.fields: Set flds1 = pConn.Db.TableDefs(tbl1).fields
+    Dim flds2 As DAO.fields: Set flds2 = pConn.Db.TableDefs(tbl2).fields
     
     Dim f1 As DAO.Field, f2 As DAO.Field
     Dim result As String

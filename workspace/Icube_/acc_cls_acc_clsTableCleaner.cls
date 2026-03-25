@@ -46,12 +46,12 @@ End Sub
 '        keyField  - 比較用キー列名
 ' 機能 : 削除設定を登録する。
 '===========================================================
-Public Sub AddSetting(ByVal srcTable As String, ByVal tgtTable As String, ByVal keyField As String)
-    Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
-    dict("Source") = srcTable
-    dict("Target") = tgtTable
-    dict("Key") = keyField
-    pSettings.Add dict
+Public Sub AddSetting(ByVal SrcTable As String, ByVal tgtTable As String, ByVal KeyField As String)
+    Dim Dict As Object: Set Dict = CreateObject("Scripting.Dictionary")
+    Dict("Source") = SrcTable
+    Dict("Target") = tgtTable
+    Dict("Key") = KeyField
+    pSettings.Add Dict
 End Sub
 
 '===========================================================
@@ -59,7 +59,7 @@ End Sub
 ' 機能 : 登録されたすべての設定に基づき削除を実行する。
 '===========================================================
 Public Sub CleanAll()
-    If pSettings.count = 0 Then Exit Sub
+    If pSettings.Count = 0 Then Exit Sub
     
     Dim setting As Variant
     For Each setting In pSettings
@@ -86,9 +86,9 @@ Private Sub DeleteTargetByKey(ByVal src As String, ByVal tgt As String, ByVal ke
     Exit Sub
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "削除失敗 [" & tgt & "]: " & Err.description, "Delete Error", vbCritical
+    pErr.Notify_Smart_Popup "削除失敗 [" & tgt & "]: " & Err.Description, "Delete Error", vbCritical
     ' トランザクション中断のため再スロー
-    Err.Raise Err.Number, "acc_clsTableCleaner", Err.description
+    Err.Raise Err.Number, "acc_clsTableCleaner", Err.Description
 End Sub
 
 '===========================================================
@@ -102,6 +102,6 @@ Public Sub ClearAllData(ByVal TableName As String)
     Exit Sub
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "全件削除失敗 [" & TableName & "]: " & Err.description, "Clear Error", vbCritical
+    pErr.Notify_Smart_Popup "全件削除失敗 [" & TableName & "]: " & Err.Description, "Clear Error", vbCritical
     Err.Raise Err.Number
 End Sub

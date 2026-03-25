@@ -45,11 +45,11 @@ Public Function CleanText(ByVal Value As Variant, _
     Dim s As String: s = CStr(Value)
     
     ' 制御文字・改行の一括除去
-    s = replace(s, vbCrLf, "")
-    s = replace(s, vbCr, "")
-    s = replace(s, vbLf, "")
-    s = replace(s, vbTab, "")
-    s = replace(s, Chr(160), "") ' ノンブレークスペース対策
+    s = Replace(s, vbCrLf, "")
+    s = Replace(s, vbCr, "")
+    s = Replace(s, vbLf, "")
+    s = Replace(s, vbTab, "")
+    s = Replace(s, Chr(160), "") ' ノンブレークスペース対策
     
     CleanText = Trim(s)
 End Function
@@ -60,8 +60,8 @@ End Function
 '===========================================================
 Public Function RemoveAllSpaces(ByVal Value As String) As String
     Dim s As String
-    s = replace(Value, " ", "")  ' 半角
-    s = replace(s, "　", "") ' 全角
+    s = Replace(Value, " ", "")  ' 半角
+    s = Replace(s, "　", "") ' 全角
     RemoveAllSpaces = s
 End Function
 

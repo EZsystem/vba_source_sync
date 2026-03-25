@@ -15,7 +15,7 @@ Option Explicit
 Public Sub ExecDelete()
     ' クラスモジュールをすべて消したい場合はこのまま
     ' 別の名前にしたい場合は "cls*" の部分だけ書き換えてください
-    Call SimpleCleanStandalone("mod_IcubeImport*")
+    Call SimpleCleanStandalone("mod_icubeVa*")
 End Sub
 
 ' 実際の削除ロジック（ここはいじらなくてOKです）
@@ -33,18 +33,18 @@ Private Sub SimpleCleanStandalone(ByVal pattern As String)
     Next mdl
 
     ' 2. リストをもとに削除実行
-    If targetNames.count = 0 Then
+    If targetNames.Count = 0 Then
         MsgBox "対象が見つかりませんでした: " & pattern
         Exit Sub
     End If
 
-    For i = 1 To targetNames.count
+    For i = 1 To targetNames.Count
         DoCmd.Close acModule, targetNames(i), acSaveNo
         DoCmd.DeleteObject acModule, targetNames(i)
         Debug.Print "削除成功: " & targetNames(i)
     Next i
 
-    MsgBox targetNames.count & " 個のモジュールを削除しました。"
+    MsgBox targetNames.Count & " 個のモジュールを削除しました。"
 End Sub
 
 
@@ -76,7 +76,7 @@ Public Sub DeleteModuleStandalone(ByVal moduleName As String)
 ErrHandler:
     ' エラー番号 2008: オブジェクトが存在しない場合は無視
     If Err.Number <> 2008 Then
-        MsgBox "Error deleting " & moduleName & ": " & Err.description, vbCritical
+        MsgBox "Error deleting " & moduleName & ": " & Err.Description, vbCritical
     End If
 End Sub
 
@@ -102,15 +102,15 @@ Public Sub CleanModulesByPattern(ByVal pattern As String)
     Next mdl
 
     ' 2. 一括削除の実行
-    If moduleNames.count = 0 Then
+    If moduleNames.Count = 0 Then
         Debug.Print "No modules found matching pattern: " & pattern
         Exit Sub
     End If
 
-    For i = 1 To moduleNames.count
-        DeleteModuleStandalone moduleNames.item(i)
+    For i = 1 To moduleNames.Count
+        DeleteModuleStandalone moduleNames.Item(i)
     Next i
     
-    MsgBox moduleNames.count & " items deleted.", vbInformation
+    MsgBox moduleNames.Count & " items deleted.", vbInformation
 End Sub
 

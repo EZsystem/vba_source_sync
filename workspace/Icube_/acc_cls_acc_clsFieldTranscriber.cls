@@ -72,14 +72,14 @@ End Sub
 Public Sub TranscribeAll()
     On Error GoTo Err_Handler
     
-    If pMappings.count = 0 Then Exit Sub
+    If pMappings.Count = 0 Then Exit Sub
     
     Dim sql As String
     sql = "SELECT * FROM [" & pTableName & "]"
     If pWhereCondition <> "" Then sql = sql & " WHERE " & pWhereCondition
     
     Dim rs As DAO.Recordset
-    Set rs = pConn.db.OpenRecordset(sql, dbOpenDynaset)
+    Set rs = pConn.Db.OpenRecordset(sql, dbOpenDynaset)
     
     If rs.EOF Then
         rs.Close
@@ -93,13 +93,13 @@ Public Sub TranscribeAll()
         rs.Edit
         
         For Each srcFld In pMappings.Keys
-            val = rs.Fields(srcFld).Value
+            val = rs.fields(srcFld).Value
             
             ' SkipNulls設定に応じた処理
             If pSkipNulls And IsNull(val) Then
                 ' スキップ（何もしない）
             Else
-                rs.Fields(pMappings(srcFld)).Value = val
+                rs.fields(pMappings(srcFld)).Value = val
             End If
         Next srcFld
         
@@ -112,7 +112,7 @@ Public Sub TranscribeAll()
     Exit Sub
 
 Err_Handler:
-    pErr.Notify_Smart_Popup "転送中にエラーが発生しました: " & Err.description, "Transcribe Error", vbCritical
+    pErr.Notify_Smart_Popup "転送中にエラーが発生しました: " & Err.Description, "Transcribe Error", vbCritical
     If Not rs Is Nothing Then rs.Close
     Err.Raise Err.Number
 End Sub
