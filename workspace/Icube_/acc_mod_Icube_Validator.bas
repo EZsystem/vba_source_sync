@@ -3,7 +3,8 @@ Attribute VB_Name = "acc_mod_Icube_Validator"
 '===================================================================================================
 ' ƒ‚ƒWƒ…[ƒ‹–¼ : acc_mod_Icube_Validator
 ' ŠT—v         : Icube_ƒe[ƒuƒ‹ŒÅ—L‚ÌƒoƒŠƒf[ƒVƒ‡ƒ“E”»’èE•âŠ®ƒƒWƒbƒNiPhase 1-8j
-' ˆË‘¶ŠÖŒW     : acc_clsDataCleaner, com_clsErrorUtility, com_clsDateMath
+' ˆË‘¶ŠÖŒW     : acc_clsDataCleaner, com_clsErrorUtility
+' ÅIXV“ú   : 2026/03/26
 '===================================================================================================
 
 Option Compare Database
@@ -17,19 +18,20 @@ Private Const BASE_YEAR As Integer = 2012
 '---------------------------------------------------------------------------------------------------
 
 '===========================================================
-' Phase 1-2: Šî–{ƒoƒŠƒf[ƒVƒ‡ƒ“‚Æ–¼Ì•ªŠ„
+' ƒvƒƒV[ƒWƒƒ–¼ : Process_BasicValidation_And_Split
+' ŠT—v           : Phase 1-2: Šî–{ƒoƒŠƒf[ƒVƒ‡ƒ“‚Æ–¼Ì•ªŠ„
 '===========================================================
 Public Sub Process_BasicValidation_And_Split(ByRef Cleaner As acc_clsDataCleaner, ByRef ErrorLog As com_clsErrorUtility)
     On Error GoTo Err_Handler
     
-    ' ƒtƒF[ƒY1: Šî–{ƒNƒŒƒ“ƒWƒ“ƒO‚Æ•âŠ®
+    ' Phase 1: Šî–{ƒNƒŒƒ“ƒWƒ“ƒO‚Æ•âŠ®
     Call Process_Judge_OneTimeProject
     Call Process_Copy_Empty_ProjectInfo
     Call Process_Merge_BranchCode
     Call Process_DateConversion_Smart(Cleaner)
     Call Process_Update_Jurisdiction(ErrorLog)
     
-    ' ƒtƒF[ƒY2: •ªŠ„‚Æƒ}ƒbƒsƒ“ƒO
+    ' Phase 2: •ªŠ„‚Æƒ}ƒbƒsƒ“ƒO
     Call Process_Split_ProjectNames
     Call Process_Calculate_PeriodFromName
     Call Process_Transfer_TempProjectCode
@@ -42,7 +44,8 @@ Err_Handler:
 End Sub
 
 '===========================================================
-' Phase 3-4: —p“r•â³‚Æ‹àŠz‹æ•ª
+' ƒvƒƒV[ƒWƒƒ–¼ : Process_Category_And_Price
+' ŠT—v           : Phase 3-4: —p“r•â³‚Æ‹àŠz‹æ•ª
 '===========================================================
 Public Sub Process_Category_And_Price(ByRef ErrorLog As com_clsErrorUtility)
     On Error GoTo Err_Handler
@@ -52,7 +55,7 @@ Public Sub Process_Category_And_Price(ByRef ErrorLog As com_clsErrorUtility)
     Dim RawText As String
     Dim ProjectPrice As Currency
 
-    ' Phase 3: —p“r•â³ƒƒWƒbƒN '[cite: 5, 6, 7]
+    ' Phase 3: —p“r•â³ƒƒWƒbƒN
     Set RsMain = DbObj.OpenRecordset("Icube_", dbOpenDynaset)
     Set RsMap = DbObj.OpenRecordset("tbl_Œš•¨—p“r³Œë•\", dbOpenSnapshot)
     
@@ -73,7 +76,7 @@ Public Sub Process_Category_And_Price(ByRef ErrorLog As com_clsErrorUtility)
     Loop
     RsMain.Close
 
-    ' Phase 4: ‹àŠz‹æ•ªŠ„“– '[cite: 8, 9]
+    ' Phase 4: ‹àŠz‹æ•ªŠ„“–
     Set RsMain = DbObj.OpenRecordset("Icube_", dbOpenDynaset)
     Set RsMap = DbObj.OpenRecordset("tbl_HŽ–‹àŠz‹æ•ª•\", dbOpenSnapshot)
     
@@ -104,7 +107,8 @@ Err_Handler:
 End Sub
 
 '===========================================================
-' Phase 5-6: Šî–{HŽ–î•ñ“]ŽÊ
+' ƒvƒƒV[ƒWƒƒ–¼ : Process_Transcribe_ProjectInfo
+' ŠT—v           : Phase 5-6: Šî–{HŽ–î•ñ“]ŽÊ
 '===========================================================
 Public Sub Process_Transcribe_ProjectInfo(ByRef ErrorLog As com_clsErrorUtility)
     On Error GoTo Err_Handler
@@ -112,10 +116,10 @@ Public Sub Process_Transcribe_ProjectInfo(ByRef ErrorLog As com_clsErrorUtility)
     Dim RsTarget As DAO.Recordset
     Dim ProjectCode As String
 
-    ' Phase 5: ƒfƒtƒHƒ‹ƒg“]ŽÊ '[cite: 10]
+    ' Phase 5: ƒfƒtƒHƒ‹ƒg“]ŽÊ
     DbObj.Execute "UPDATE Icube_ SET sŠî–{HŽ–ƒR[ƒh = Šî–{HŽ–ƒR[ƒh, sŠî–{HŽ––¼Ì = Šî–{HŽ––¼Ì WHERE Šî–{HŽ–ƒR[ƒh IS NOT NULL", dbFailOnError
 
-    ' Phase 6: ƒXƒLƒbƒvƒŠƒXƒg”»’è“]ŽÊ '[cite: 11]
+    ' Phase 6: ƒXƒLƒbƒvƒŠƒXƒg”»’è“]ŽÊ
     Set RsTarget = DbObj.OpenRecordset("SELECT No, sŠî–{HŽ–ƒR[ƒh, HŽ–ƒR[ƒh, HŽ–’ •[–¼, sŠî–{HŽ––¼Ì FROM Icube_", dbOpenDynaset)
     Do While Not RsTarget.EOF
         ProjectCode = Trim(UCase(Nz(RsTarget!sŠî–{HŽ–ƒR[ƒh, "")))
@@ -135,7 +139,8 @@ Err_Handler:
 End Sub
 
 '===========================================================
-' Phase 7-8: –¼Ì®Œ`‚ÆŒÚ‹qƒf[ƒ^“]ŽÊ
+' ƒvƒƒV[ƒWƒƒ–¼ : Process_Final_Cleansing
+' ŠT—v           : Phase 7-8: –¼Ì®Œ`‚ÆŒÚ‹qƒf[ƒ^“]ŽÊ
 '===========================================================
 Public Sub Process_Final_Cleansing(ByRef ErrorLog As com_clsErrorUtility)
     On Error GoTo Err_Handler
@@ -145,7 +150,7 @@ Public Sub Process_Final_Cleansing(ByRef ErrorLog As com_clsErrorUtility)
     Dim CleanedResult As String
     Dim ClientCode As String
 
-    ' Phase 7: ’Ç‰ÁHŽ––¼Ì®Œ` '[cite: 12, 13]
+    ' Phase 7: ’Ç‰ÁHŽ––¼Ì®Œ`
     Set RsT = CurrentDb.OpenRecordset("SELECT No, ”­’ŽÒƒR[ƒh, ’Ç‰ÁHŽ––¼Ì, ’Ç‰ÁHŽ––¼Ì_cle FROM Icube_", dbOpenDynaset)
     Do While Not RsT.EOF
         OriginalName = Nz(RsT!’Ç‰ÁHŽ––¼Ì, "")
@@ -165,7 +170,7 @@ Public Sub Process_Final_Cleansing(ByRef ErrorLog As com_clsErrorUtility)
     Loop
     RsT.Close
 
-    ' Phase 8: ŒÚ‹qƒf[ƒ^“]ŽÊ '[cite: 14, 15, 16]
+    ' Phase 8: ŒÚ‹qƒf[ƒ^“]ŽÊ
     Set rsS = CurrentDb.OpenRecordset("tbl_ŒÚ‹qƒf[ƒ^", dbOpenSnapshot)
     Do While Not rsS.EOF
         ClientCode = Nz(rsS!ŒÚ‹qƒR[ƒh, "")
@@ -194,7 +199,7 @@ End Sub
 
 Private Sub Process_Judge_OneTimeProject()
     Dim rs As DAO.Recordset: Set rs = CurrentDb.OpenRecordset("Icube_", dbOpenDynaset)
-    Dim Conds As Variant: Conds = Array("‚P‚Q”HŽ–", "‚P‚R”HŽ–", "‚P‚p", "‚Q‚p", "‚R‚p", "‚S‚p") '[cite: 17]
+    Dim Conds As Variant: Conds = Array("‚P‚Q”HŽ–", "‚P‚R”HŽ–", "‚P‚p", "‚Q‚p", "‚R‚p", "‚S‚p")
     Dim i As Integer
     Dim IsSmall As Boolean
     Do While Not rs.EOF
@@ -206,7 +211,7 @@ Private Sub Process_Judge_OneTimeProject()
             End If
         Next i
         rs.Edit
-        rs!ˆêŒHŽ–”»’è = IIf(IsSmall, "¬ŒûHŽ–", "ˆêŒHŽ–") '[cite: 18]
+        rs!ˆêŒHŽ–”»’è = IIf(IsSmall, "¬ŒûHŽ–", "ˆêŒHŽ–")
         rs.Update
         rs.MoveNext
     Loop
@@ -231,18 +236,18 @@ Private Sub Process_DateConversion_Smart(ByRef Cleaner As acc_clsDataCleaner)
         TargetFld = IIf(Prfx(i) = "Žó’", "Žó’Œvã“ú_“ú•tŒ^", Prfx(i) & "“ú_“ú•tŒ^")
         Set rs = CurrentDb.OpenRecordset("SELECT No, " & Flds(i) & ", " & Prfx(i) & "”N“x, " & Prfx(i) & "Šú, " & Prfx(i) & "Q, " & Prfx(i) & "ŒŽ, " & TargetFld & " FROM Icube_", dbOpenDynaset)
         Do While Not rs.EOF
-            ' acc_clsDataCleaner ‚ðŽg—p‚µ‚ÄˆÀ‘S‚É“ú•t‚ðŽæ“¾ '[cite: 20]
+            ' acc_clsDataCleaner ‚ðŽg—p‚µ‚ÄˆÀ‘S‚É“ú•t‚ðŽæ“¾
             TargetDate = Cleaner.CleanDate(rs.fields(1).Value)
             If VBA.Year(TargetDate) > 1900 Then
                 rs.Edit
                 rs.fields(Prfx(i) & "”N“x").Value = GetFiscalYear(TargetDate)
-                rs.fields(Prfx(i) & "Šú").Value = GetFiscalYear(TargetDate) - BASE_YEAR + 1 '[cite: 21]
+                rs.fields(Prfx(i) & "Šú").Value = GetFiscalYear(TargetDate) - BASE_YEAR + 1
                 rs.fields(Prfx(i) & "Q").Value = GetFiscalQuarter(TargetDate)
                 rs.fields(Prfx(i) & "ŒŽ").Value = VBA.Month(TargetDate)
                 rs.fields(TargetFld).Value = TargetDate
                 rs.Update
             End If
-            rs.MoveNext '[cite: 22]
+            rs.MoveNext
         Loop
         rs.Close
     Next i
@@ -258,7 +263,7 @@ Private Sub Process_Update_Jurisdiction(ByRef ErrorLog As com_clsErrorUtility)
         If Not IsNull(rsD!‘gDƒR[ƒh) Then
             Dict(Trim(CStr(rsD!‘gDƒR[ƒh))) = rsD!Ž{HŠÇŠ‘gDƒR[ƒh
         End If
-        rsD.MoveNext '[cite: 23]
+        rsD.MoveNext
     Loop
     rsD.Close
     
@@ -269,7 +274,7 @@ Private Sub Process_Update_Jurisdiction(ByRef ErrorLog As com_clsErrorUtility)
         If Dict.Exists(oC) Then
             RsT.Edit
             RsT!Ž{HŠÇŠ‘gDƒR[ƒh = Dict(oC)
-            RsT.Update '[cite: 24]
+            RsT.Update
         Else
             RsE.AddNew
             RsE!’Ç‰ÁHŽ––¼Ì = RsT!’Ç‰ÁHŽ––¼Ì
@@ -277,7 +282,7 @@ Private Sub Process_Update_Jurisdiction(ByRef ErrorLog As com_clsErrorUtility)
             RsE!Ž{H’S“–‘gD–¼ = RsT!Ž{H’S“–‘gD–¼
             RsE.Update
         End If
-        RsT.MoveNext '[cite: 25]
+        RsT.MoveNext
     Loop
     RsT.Close: RsE.Close
     
@@ -291,7 +296,7 @@ Private Sub Process_Update_Jurisdiction(ByRef ErrorLog As com_clsErrorUtility)
     Loop
     rsD.Close
     
-    Set RsT = Db.OpenRecordset("Icube_", dbOpenDynaset) '[cite: 26]
+    Set RsT = Db.OpenRecordset("Icube_", dbOpenDynaset)
     Do While Not RsT.EOF
         Dim JurisCode As String: JurisCode = Trim(Nz(RsT!Ž{HŠÇŠ‘gDƒR[ƒh, ""))
         If Dict.Exists(JurisCode) Then
@@ -307,10 +312,10 @@ End Sub
 Private Sub Process_Split_ProjectNames()
     Dim rs As DAO.Recordset: Set rs = CurrentDb.OpenRecordset("Icube_", dbOpenDynaset)
     Do While Not rs.EOF
-        If rs!ˆêŒHŽ–”»’è = "¬ŒûHŽ–" Then '[cite: 27]
+        If rs!ˆêŒHŽ–”»’è = "¬ŒûHŽ–" Then
             Dim ProjName As String: ProjName = Nz(rs!Šî–{HŽ––¼Ì, "")
             rs.Edit
-            ' ì‹ÆŠ”»’è '[cite: 28]
+            ' ì‹ÆŠ”»’è
             If Left(ProjName, 3) = "Œš’z•”" Then
                 rs!Šî–{HŽ––¼_ì‹ÆŠ = "Œš’z•”"
             Else
@@ -321,7 +326,7 @@ Private Sub Process_Split_ProjectNames()
                     rs!Šî–{HŽ––¼_ì‹ÆŠ = ""
                 End If
             End If
-            ' ”N“xEQEŠ¯–¯EŒJ‰z '[cite: 29, 30]
+            ' ”N“xEQEŠ¯–¯EŒJ‰z
             Dim PosYear As Long: PosYear = InStr(ProjName, "”N“x")
             rs!Šî–{HŽ––¼_”N“x = IIf(PosYear >= 3, Mid(ProjName, PosYear - 2, 2), "")
             rs!Šî–{HŽ––¼_Q = IIf(PosYear > 0 And Len(ProjName) >= PosYear + 2, Mid(ProjName, PosYear + 2, 2), "")
@@ -333,7 +338,7 @@ Private Sub Process_Split_ProjectNames()
             rs!Šî–{HŽ––¼_ì‹ÆŠ = "N/A": rs!Šî–{HŽ––¼_”N“x = "N/A": rs!Šî–{HŽ––¼_Q = "N/A": rs!Šî–{HŽ––¼_Š¯–¯ = "N/A": rs!Šî–{HŽ––¼_ŒJ‰z = "N/A"
             rs.Update
         End If
-        rs.MoveNext '[cite: 31]
+        rs.MoveNext
     Loop
     rs.Close
 End Sub
@@ -354,20 +359,20 @@ Private Sub Internal_MapTempProject(ByVal FldC As String, ByVal FldN As String, 
     Dim RsI As DAO.Recordset, RsR As DAO.Recordset: Set RsR = CurrentDb.OpenRecordset("tb_‰¼Šî–{HŽ–", dbOpenSnapshot)
     Set RsI = CurrentDb.OpenRecordset("SELECT * FROM Icube_ WHERE ˆêŒHŽ–”»’è = '¬ŒûHŽ–'", dbOpenDynaset)
     Do While Not RsI.EOF
-        Dim wS As String: wS = Trim(Nz(RsI!Šî–{HŽ––¼_ì‹ÆŠ, "")) '[cite: 32]
+        Dim wS As String: wS = Trim(Nz(RsI!Šî–{HŽ––¼_ì‹ÆŠ, ""))
         Dim pP As String: pP = Trim(Nz(RsI!Šî–{HŽ––¼_Š¯–¯, ""))
-        Dim qV As String: qV = IIf(IsO, ConvertToZenkakuNumber(Trim(Nz(RsI!Žó’Q, ""))) & "Q", Trim(Nz(RsI!Šî–{HŽ––¼_Q, ""))) '[cite: 33]
+        Dim qV As String: qV = IIf(IsO, ConvertToZenkakuNumber(Trim(Nz(RsI!Žó’Q, ""))) & "Q", Trim(Nz(RsI!Šî–{HŽ––¼_Q, "")))
         Dim cR As String: cR = Trim(Nz(RsI!Šî–{HŽ––¼_ŒJ‰z, ""))
         RsR.MoveFirst
         Do While Not RsR.EOF
             Dim Match As Boolean: Match = (Trim(Nz(RsR!Šî–{HŽ––¼_ì‹ÆŠ, "")) = wS And Trim(Nz(RsR!Šî–{HŽ––¼_Š¯–¯, "")) = pP And Trim(Nz(RsR!Šî–{HŽ––¼_Q, "")) = qV)
             If Not IsO Then
-                Match = Match And (Trim(Nz(RsR!Šî–{HŽ––¼_ŒJ‰z, "")) = cR) '[cite: 34]
+                Match = Match And (Trim(Nz(RsR!Šî–{HŽ––¼_ŒJ‰z, "")) = cR)
             End If
             If Match Then
                 RsI.Edit
                 RsI.fields(FldC).Value = RsR!‰¼Šî–{HŽ–ƒR[ƒh
-                RsI.fields(FldN).Value = RsR!‰¼Šî–{HŽ–—ª–¼ '[cite: 35]
+                RsI.fields(FldN).Value = RsR!‰¼Šî–{HŽ–—ª–¼
                 RsI.Update: Exit Do
             End If
             RsR.MoveNext
@@ -381,34 +386,34 @@ End Sub
 ' 3. ƒwƒ‹ƒp[ŠÖ” (Private)
 '---------------------------------------------------------------------------------------------------
 
-Private Function GetCleanedName_FromMaster(ByVal CCode As String, ByVal Raw As String) As String '[cite: 37]
+Private Function GetCleanedName_FromMaster(ByVal CCode As String, ByVal Raw As String) As String
     Dim rs As DAO.Recordset: Dim ResText As String: ResText = Raw
     Set rs = CurrentDb.OpenRecordset("tbl_HŽ––¼cle", dbOpenSnapshot)
     Do Until rs.EOF
         If Nz(rs!”­’ŽÒƒR[ƒh, "") = CCode Then
             Dim Tri As String: Tri = Nz(rs!ƒgƒŠƒK[ƒ[ƒh, "")
-            Dim Del As String: Del = Nz(rs!del‹æ•ªƒ[ƒh, "") '[cite: 38]
+            Dim Del As String: Del = Nz(rs!del‹æ•ªƒ[ƒh, "")
             If Tri = "" Or Left(ResText, Len(Tri)) = Tri Then
                 Dim Pos As Long
                 If Del = "ƒuƒ‰ƒ“ƒN" Then
                     Pos = InStr(ResText, " ")
-                    If Pos = 0 Then Pos = InStr(ResText, "@") '[cite: 39]
+                    If Pos = 0 Then Pos = InStr(ResText, "@")
                     If Pos > 0 Then ResText = Mid(ResText, Pos + 1)
                 Else
                     Pos = InStr(ResText, Del)
-                    If Pos > 0 Then ResText = Mid(ResText, Pos + Len(Del)) '[cite: 40]
+                    If Pos > 0 Then ResText = Mid(ResText, Pos + Len(Del))
                 End If
                 ResText = Trim(ResText)
                 Exit Do
             End If
         End If
-        rs.MoveNext '[cite: 41]
+        rs.MoveNext
     Loop
     rs.Close: GetCleanedName_FromMaster = ResText
 End Function
 
 Private Function GetFiscalYear(ByVal dt As Date) As Integer
-    GetFiscalYear = IIf(VBA.Month(dt) <= 3, VBA.Year(dt) - 1, VBA.Year(dt)) '[cite: 44]
+    GetFiscalYear = IIf(VBA.Month(dt) <= 3, VBA.Year(dt) - 1, VBA.Year(dt))
 End Function
 
 Private Function GetFiscalQuarter(ByVal dt As Date) As Integer
@@ -425,7 +430,7 @@ Private Function ConvertToZenkakuNumber(ByVal s As String) As String
     Dim i As Integer, c As String, r As String
     For i = 1 To Len(s)
         c = Mid(s, i, 1)
-        If c Like "'[0-9]" Then
+        If c Like "[0-9]" Then
             r = r & Chr(Asc(c) - Asc("0") + &H824F)
         Else
             r = r & c
