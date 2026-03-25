@@ -23,6 +23,10 @@ class GitManager:
             if not (Path(self.repo_path) / ".git").exists():
                 logger.info("リポジトリを初期化します...")
                 repo = Repo.init(self.repo_path)
+                # デフォルトブランチ名を main に設定
+                with repo.config_writer() as cw:
+                    cw.set_value("init", "defaultBranch", "main")
+                repo.git.checkout("-b", "main")
                 repo.create_remote("origin", self.authenticated_url)
             else:
                 repo = Repo(self.repo_path)
@@ -37,7 +41,12 @@ class GitManager:
 
                 # 4. Push実行
                 origin = repo.remote(name="origin")
-                origin.push()
+                
+                # 初回Push時に upstream を設定するように変更
+                logger.info("GitHubへPush中...")
+                # 'main' ブランチを明示的に指定して push し、追跡設定 (u) を行う
+                origin.push(refspec='main:main', set_upstream=True)
+                
                 logger.success("GitHubへのPushに成功しました。")
             else:
                 logger.info("変更がないため、Pushをスキップしました。")
