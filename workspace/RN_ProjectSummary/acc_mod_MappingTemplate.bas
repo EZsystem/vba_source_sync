@@ -1,58 +1,68 @@
 Attribute VB_Name = "acc_mod_MappingTemplate"
 '-------------------------------------
-' Module: accmod_MappingTemplate
-' 説明   : マッピングひな型生成処理
-' 作成日 : 2025/05/23
-' 更新日 : -
+' Module: acc_mod_MappingTemplate
+' 説明   : プロジェクト全体のオブジェクト名管理およびマッピングツール
+' 更新日 : 2026/03/26
 '-------------------------------------
+'Attribute VB_Name = "acc_mod_MappingTemplate"
 Option Compare Database
 Option Explicit
 
-'=================================================
-' 定数名 : MAPPING_TABLE_NAME
-' 説明   : マッピングテーブル名を定義（変更時ここだけ修正）
-'=================================================
-Private Const MAPPING_TABLE_NAME As String = "tb_本テーブル取込マッピング"
+'===========================================================
+' 【RN_ProjectSummary】 オブジェクト定数 最終定義版
+'===========================================================
+' --- 1. iCube インポート・ワークテーブル ---
+Public Const AT_ICUBE As String = "at_Icube"
+Public Const AT_ICUBE_HISTORY As String = "at_Icube_累計"
+Public Const AT_ICUBE_IMPORT_WORK As String = "at_Temp_Icube_Import"
+Public Const AT_ICUBE_COL_SETTING As String = "at_Icube_ColSetting"
+
+' --- 2. バリデーション用マスタ ---
+Public Const AT_BUILDING_USE_MAP As String = "at_建物用途正誤表"       ' 旧: tbl_建物用途正誤表
+Public Const AT_PRICE_CATEGORY_MAP As String = "at_工事金額区分表"    ' 旧: tbl_工事金額区分表
+Public Const AT_CLIENT_DATA As String = "at_顧客データ"                ' 旧: tbl_顧客データ
+Public Const AT_BRANCH_WORK_HISTORY As String = "at_支店作業所_累計"   ' 旧: t_支店作業所_累計
+Public Const AT_JURISDICTION_MAP As String = "at_管轄作業所_RN部恒久作業所3"      ' 旧: tb_管轄作業所_RN部恒久作業所3
+Public Const AT_TEMP_PROJECT_MAP As String = "at_仮基本工事"           ' 旧: tb_仮基本工事
+Public Const AT_PROJECT_NAME_CLEAN As String = "at_工事名cle"          ' 旧: tbl_工事名cle
+Public Const AT_ERR_SAGYOSHO As String = "at_err作業所"        ' 旧: t_err作業所
+
+' --- 3. 関連マスタ ---
+Public Const AT_KIHON_KANKO As String = "at_基本工事_完工"
+Public Const AT_KIHON_SAGYO As String = "at_基本工事_作業所"
+Public Const AT_KIHON_JUCHU As String = "at_基本工事_受注"
+Public Const AT_PROJECT_INFO As String = "at_工事コード情報"
+Public Const AT_EDABAN As String = "at_枝番工事"
+Public Const AT_LINK_KIHON_NAME As String = "at_基本工事名称_リンク"
+
+' --- 4. ツール管理・クエリ ---
+Public Const AT_MAPPING_INFO As String = "at_取込マッピング_Template"
+Public Const AQ_SEL_KIHON_NAME As String = "sel_基本工事名称"
 
 '=================================================
 ' サブルーチン名 : Generate_MappingTemplate_FromList
-' 説明   : 一覧から本テーブルを選択し
-'        : マッピングひな型生成処理を呼び出す
-' 引数   : なし
-' 戻り値 : なし
+' 概要   : マッピングひな型生成のメイン処理
 '=================================================
 Public Sub Generate_MappingTemplate_FromList()
-    ' --- 1. DAO.Database 取得 ---
-    Dim Db As DAO.Database
-    Set Db = CurrentDb
+    Dim Db As DAO.Database: Set Db = CurrentDb
     
-    ' --- 2. 本テーブル選択 ---
+    ' 本テーブル選択
     Dim tableMain As String
     tableMain = Get_TableNameFromList("本テーブルを選択")
     If tableMain = "" Then MsgBox "処理をキャンセルしました", vbExclamation: Exit Sub
     
-    ' --- 3. 仮テーブル選択 ---
-    Dim tableTemp As String
-    tableTemp = MAPPING_TABLE_NAME
-    
-    ' --- 4. ひな型生成処理呼び出し ---
-    Call Generate_MappingTemplateCore(tableMain, tableTemp)
-End Sub ' ← Generate_MappingTemplate_FromList 終了
+    ' ひな型生成処理呼び出し (定数 AT_MAPPING_INFO を使用)
+    Call Generate_MappingTemplateCore(tableMain, AT_MAPPING_INFO)
+End Sub
 
 '=================================================
-' 関数名 : Get_TableNameFromList
-' 説明   : テーブル名一覧から選択したテーブル名を取得
-' 引数   : promptTitle（String）プロンプトタイトル
-' 戻り値 : String 選択したテーブル名
+' 内部関数 : Get_TableNameFromList
 '=================================================
 Private Function Get_TableNameFromList(promptTitle As String) As String
-    ' --- 1. DAO.Database 取得 ---
-    Dim Db As DAO.Database
-    Set Db = CurrentDb
-    
-    ' --- 2. テーブル名一覧作成 ---
+    Dim Db As DAO.Database: Set Db = CurrentDb
     Dim td As DAO.TableDef
     Dim tableList As String
+    
     For Each td In Db.TableDefs
         If Left(td.Name, 4) <> "MSys" Then
             tableList = tableList & td.Name & ";"
@@ -63,75 +73,48 @@ Private Function Get_TableNameFromList(promptTitle As String) As String
     Dim tableArray() As String
     tableArray = Split(Left(tableList, Len(tableList) - 1), ";")
     
-    ' --- 3. プロンプト作成 ---
     Dim i As Long
     Dim msg As String
     msg = "番号で " & promptTitle & vbCrLf & vbCrLf
     For i = LBound(tableArray) To UBound(tableArray)
         msg = msg & (i + 1) & ". " & tableArray(i) & vbCrLf
     Next i
-    msg = msg & vbCrLf & "番号を入力してください : "
     
-    ' --- 4. 入力値検証 ---
     Dim choice As Variant
-    choice = InputBox(msg, promptTitle)
+    choice = InputBox(msg & vbCrLf & "番号を入力してください : ", promptTitle)
     If IsNumeric(choice) Then
         If choice >= 1 And choice <= UBound(tableArray) + 1 Then
             Get_TableNameFromList = tableArray(choice - 1)
         End If
     End If
-End Function ' ← Get_TableNameFromList 終了
+End Function
 
 '=================================================
-' サブルーチン名 : Generate_MappingTemplateCore
-' 説明   : 指定本テーブルと仮テーブルからフィールド情報を取得し
-'        : マッピングテーブルのひな型を生成
-' 引数   : tableMain（String）本テーブル名
-'        : tableTemp（String）仮テーブル名
-' 戻り値 : なし
+' 内部処理 : Generate_MappingTemplateCore
 '=================================================
 Private Sub Generate_MappingTemplateCore(tableMain As String, tableTemp As String)
-    ' --- 1. DAO.Database 取得 ---
-    Dim Db As DAO.Database
-    Set Db = CurrentDb
+    Dim Db As DAO.Database: Set Db = CurrentDb
+    Dim tdefMain As DAO.TableDef: Set tdefMain = Db.TableDefs(tableMain)
+    Dim tdefTemp As DAO.TableDef: Set tdefTemp = Db.TableDefs(tableTemp)
     
-    ' --- 2. テーブル定義取得 ---
-    Dim tdefMain As DAO.TableDef
-    Dim tdefTemp As DAO.TableDef
-    Set tdefMain = Db.TableDefs(tableMain)
-    Set tdefTemp = Db.TableDefs(tableTemp)
-    
-    ' --- 3. 仮テーブルフィールド辞書作成 ---
-    Dim dictTempFields As Object
-    Set dictTempFields = CreateObject("Scripting.Dictionary")
+    Dim dictTempFields As Object: Set dictTempFields = CreateObject("Scripting.Dictionary")
     Dim fld As DAO.Field
     For Each fld In tdefTemp.fields
         dictTempFields(fld.Name) = True
     Next fld
     
-    ' --- 4. マッピングテーブルレコードセット取得 ---
     Dim rsMapping As DAO.Recordset
-    Set rsMapping = Db.OpenRecordset(MAPPING_TABLE_NAME, dbOpenDynaset)
+    Set rsMapping = Db.OpenRecordset("[" & AT_MAPPING_INFO & "]", dbOpenDynaset)
     
-    ' --- 5. 本テーブルフィールドループ ---
-    Dim fldName As String
-    Dim fieldTypeStr As String
-    Dim existsInTemp As Boolean
     For Each fld In tdefMain.fields
-        fldName = fld.Name
-        
-        ' 自動増分フィールドと GUID 型はスキップ
         If (fld.Attributes And dbAutoIncrField) Or fld.Type = dbGUID Then GoTo NextField
         
-        fieldTypeStr = GetFieldTypeName(fld.Type)
-        existsInTemp = dictTempFields.Exists(fldName)
-        
-        If Not IsMappingExists(tableMain, fldName) Then
+        If Not IsMappingExists(tableMain, fld.Name) Then
             rsMapping.AddNew
             rsMapping!本テーブル名 = tableMain
-            rsMapping!本フィールド名 = fldName
-            rsMapping!仮フィールド名 = IIf(existsInTemp, fldName, "")
-            rsMapping!データ型 = fieldTypeStr
+            rsMapping!本フィールド名 = fld.Name
+            rsMapping!仮フィールド名 = IIf(dictTempFields.Exists(fld.Name), fld.Name, "")
+            rsMapping!データ型 = GetFieldTypeName(fld.Type)
             rsMapping!取込対象 = True
             rsMapping!デフォルト値 = ""
             rsMapping.Update
@@ -139,52 +122,37 @@ Private Sub Generate_MappingTemplateCore(tableMain As String, tableTemp As Strin
 NextField:
     Next fld
     
-    ' --- 6. クリーンアップ ---
     rsMapping.Close
-    
-    ' --- 7. 完了通知 ---
     MsgBox "マッピングひな型の生成が完了しました", vbInformation
-End Sub ' ← Generate_MappingTemplateCore 終了
+End Sub
 
 '=================================================
-' 関数名 : GetFieldTypeName
-' 説明   : フィールド型定数から日本語の型名を返す
-' 引数   : fieldType（Integer）DAO.Field.Type 定数
-' 戻り値 : String 型名称
+' 内部補助関数
 '=================================================
 Private Function GetFieldTypeName(fieldType As Integer) As String
     Select Case fieldType
-        Case dbBoolean:   GetFieldTypeName = "Yes/No型"
-        Case dbByte:      GetFieldTypeName = "バイト型"
-        Case dbInteger:   GetFieldTypeName = "整数型"
-        Case dbLong:      GetFieldTypeName = "長整数型"
-        Case dbSingle:    GetFieldTypeName = "単精度型"
-        Case dbDouble:    GetFieldTypeName = "倍精度型"
-        Case dbCurrency:  GetFieldTypeName = "通貨型"
-        Case dbDate:      GetFieldTypeName = "日付/時刻型"
-        Case dbText:      GetFieldTypeName = "テキスト型"
-        Case dbMemo:      GetFieldTypeName = "メモ型"
-        Case dbGUID:      GetFieldTypeName = "GUID型"
-        Case Else:        GetFieldTypeName = "未対応型"
+        Case dbBoolean:  GetFieldTypeName = "Yes/No型"
+        Case dbByte:     GetFieldTypeName = "バイト型"
+        Case dbInteger:  GetFieldTypeName = "整数型"
+        Case dbLong:     GetFieldTypeName = "長整数型"
+        Case dbSingle:   GetFieldTypeName = "単精度型"
+        Case dbDouble:   GetFieldTypeName = "倍精度型"
+        Case dbCurrency: GetFieldTypeName = "通貨型"
+        Case dbDate:     GetFieldTypeName = "日付/時刻型"
+        Case dbText:     GetFieldTypeName = "テキスト型"
+        Case dbMemo:     GetFieldTypeName = "メモ型"
+        Case Else:       GetFieldTypeName = "未対応型"
     End Select
-End Function ' ← GetFieldTypeName 終了
+End Function
 
-'=================================================
-' 関数名 : IsMappingExists
-' 説明   : 指定本テーブルとフィールド名でマッピングが既存か判定
-' 引数   : tableMain（String）本テーブル名
-'        : fieldName（String）フィールド名
-' 戻り値 : Boolean 既存なら True
-'=================================================
 Private Function IsMappingExists(tableMain As String, FieldName As String) As Boolean
     Dim rs As DAO.Recordset
     Set rs = CurrentDb.OpenRecordset( _
-        "SELECT * FROM [" & MAPPING_TABLE_NAME & "] " & _
+        "SELECT * FROM [" & AT_MAPPING_INFO & "] " & _
         "WHERE [本テーブル名] = '" & Replace(tableMain, "'", "''") & "' " & _
         "AND [本フィールド名] = '" & Replace(FieldName, "'", "''") & "'", _
         dbOpenSnapshot)
     IsMappingExists = Not rs.EOF
     rs.Close
-End Function ' ← IsMappingExists 終了
-
+End Function
 

@@ -1,12 +1,9 @@
-Attribute VB_Name = "Union_sql"
+Attribute VB_Name = "acc_mod_Union_sql"
+' Module: acc_mod_Union_sql
 '============================================================
 ' サブルーチン名 : Transfer_Union_NoDuplicate
-' 概要           : クエリ sel_基本工事名称 の結果から s基本工事コード ごとに
-'                  重複を排除して tblRink_基本工事名称 に転写する処理にゃ
-' 処理内容       : Dictionaryを使って s基本工事コード をキーに一意判定
-'                  最初の1件だけINSERTする構成にゃ
-' 引数           : なし
-' 戻り値         : なし
+' 概要           : クエリから s基本工事コード ごとに重複を排除して転写
+' 依存関係       : acc_mod_MappingTemplate (テーブル名・クエリ名定数)
 '============================================================
 Public Sub Transfer_Union_NoDuplicate()
     On Error GoTo ErrHandler
@@ -19,21 +16,23 @@ Public Sub Transfer_Union_NoDuplicate()
     Set Db = CurrentDb
     Set Dict = CreateObject("Scripting.Dictionary")
 
-    ' 転写先テーブルを事前クリア
-    Db.Execute "DELETE FROM tblRink_基本工事名称", dbFailOnError
+    ' 1. 転写先テーブルを事前クリア (定数 AT_LINK_KIHON_NAME を使用)
+    Db.Execute "DELETE FROM [" & AT_LINK_KIHON_NAME & "]", dbFailOnError
 
-    ' クエリ sel_基本工事名称 のSQLを実行（保存済クエリを使う構成）
-    sql = "SELECT s基本工事コード, s基本工事名称, 完工期, 完工Q, 施工管轄組織名, 一件工事判定 FROM sel_基本工事名称"
+    ' 2. クエリのSQLを実行 (定数 AQ_SEL_KIHON_NAME を使用)
+    ' クエリ名は名称変更対象外ですが、定数管理に合わせることで保守性を高めています
+    sql = "SELECT s基本工事コード, s基本工事名称, 完工期, 完工Q, 施工管轄組織名, 一件工事判定 FROM [" & AQ_SEL_KIHON_NAME & "]"
     Set rs = Db.OpenRecordset(sql, dbOpenSnapshot)
 
-    ' クエリ結果を1行ずつ処理
+    ' 3. クエリ結果を1行ずつ処理
     Do While Not rs.EOF
         Dim empCode As String
         empCode = rs!s基本工事コード
 
         ' Dictionaryで未登録のコードのみ転写実行
         If Not Dict.Exists(empCode) Then
-            Db.Execute "INSERT INTO tblRink_基本工事名称 " & _
+            ' INSERT先のテーブル名を定数に変更
+            Db.Execute "INSERT INTO [" & AT_LINK_KIHON_NAME & "] " & _
                        "(s基本工事コード, s基本工事名称, 完工期, 完工Q, 施工管轄組織名, 一件工事判定) " & _
                        "VALUES (" & _
                        "'" & Replace(empCode, "'", "''") & "', " & _
@@ -48,7 +47,7 @@ Public Sub Transfer_Union_NoDuplicate()
         rs.MoveNext
     Loop
 
-    ' 解放処理
+    ' 4. 解放処理
     rs.Close: Set rs = Nothing
     Set Dict = Nothing: Set Db = Nothing
 
@@ -59,5 +58,4 @@ ErrHandler:
     MsgBox "エラーが発生したにゃ：" & Err.Description, vbCritical
     If Not rs Is Nothing Then rs.Close
 End Sub
-
 
