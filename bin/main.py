@@ -8,7 +8,7 @@ import gc  # ガベージコレクション（メモリ解放）用に追加
 
 # 自作モジュールのインポート用パス設定
 sys.path.append(str(Path(__file__).parent.parent))
-from src.exporter import VBAExporter, AccessSQLExtractor
+from src.exporter import VBAExporter, AccessSQLExtractor, ExcelInfoExtractor
 from src.git_handler import GitManager
 
 def select_file():
