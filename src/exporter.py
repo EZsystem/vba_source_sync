@@ -60,19 +60,39 @@ class VBAExporter:
     def _export_component(self, comp, app_type, target_dir):
         """個別コンポーネントのエクスポート実行ロジック"""
         prefix = self._get_prefix(app_type, comp.Type)
-        # 比較用にアンダースコアを除去したベースの接頭辞を作成 (例: acc_cls_ -> acc_cls)
-        base_prefix = prefix.rstrip("_")
-        
-        # 命名規則の適用（二重付与防止）
         name = comp.Name
         
-        # 「アンダースコアあり」または「アンダースコアなし」のいずれかで始まっていれば重複とみなす
-        if not (name.lower().startswith(prefix.lower()) or 
-                name.lower().startswith(base_prefix.lower())):
-            name = prefix + name
+        # --- 追加条件の処理 ---
+        # 対象：Accessのクラス (Type 2:クラス, 100:Document) で、かつ名称に "com_" を含む場合
+        is_access_class = (app_type == "access" and comp.Type in [2, 100])
+        
+        if is_access_class and ("com_" in name.lower()):
+            # パターン1：既に "acc_cls_" が付いている場合は除去する
+            # 例: acc_cls_com_clsDateMath -> com_clsDateMath
+            if name.lower().startswith("acc_cls_"):
+                name = name[len("acc_cls_"):]
+            
+            # パターン2："com_" で始まっている場合は接頭辞(acc_cls_)の付与をスキップ
+            if name.lower().startswith("com_"):
+                pass  # 接頭辞を付けずに確定
+            else:
+                # それ以外（comが含まれるがcom_開始でない等）は通常の付与ロジックへ
+                name = self._apply_prefix_if_needed(name, prefix)
+        else:
+            # 通常の付与ロジック（Excelや標準モジュールなど）
+            name = self._apply_prefix_if_needed(name, prefix)
+        # ----------------------
             
         ext = ".bas" if comp.Type == 1 else ".cls"
         if comp.Type == 3: ext = ".frm"
         
         export_path = target_dir / (name + ext)
         comp.Export(str(export_path))
+
+    def _apply_prefix_if_needed(self, name, prefix):
+        """接頭辞の二重付与を防止しながら適用する内部メソッド"""
+        base_prefix = prefix.rstrip("_")
+        if not (name.lower().startswith(prefix.lower()) or 
+                name.lower().startswith(base_prefix.lower())):
+            return prefix + name
+        return name
