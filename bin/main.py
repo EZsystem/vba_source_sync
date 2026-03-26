@@ -5,80 +5,58 @@ from tkinter import filedialog
 from pathlib import Path
 from loguru import logger
 
-# 自作モジュールのインポート用パス設定（インポート前に実行）
+# パス設定
 sys.path.append(str(Path(__file__).parent.parent))
-from src.exporter import VBAExporter
+from src.exporter import VBAExporter, AccessSQLExtractor
 from src.git_handler import GitManager
 
 def select_file():
-    """ファイル選択ダイアログを表示する"""
     root = tk.Tk()
-    root.withdraw()  # メインウィンドウは表示しない
-    
-    # 最初はAccessファイルを優先して表示
+    root.withdraw()
     file_types = [
+        ("Access Project Summary", "RN_ProjectSummary.accdb"),
         ("Access Database", "*.accdb;*.mdb"),
         ("Excel Macro-Enabled Workbook", "*.xlsm"),
         ("All Files", "*.*")
     ]
-    
-    selected_path = filedialog.askopenfilename(
-        title="バックアップ対象のファイルを選択してください",
-        filetypes=file_types
-    )
-    return selected_path
+    return filedialog.askopenfilename(title="対象ファイルを選択", filetypes=file_types)
 
 def main():
-    # 1. ログの設定
     project_root = Path(__file__).parent.parent
-    log_dir = project_root / "logs"
-    log_dir.mkdir(exist_ok=True)
-    logger.add(log_dir / "exec_{time:YYYYMMDD}.log", rotation="1 day", level="INFO")
-    
-    logger.info("=== VBA Export & Sync Process Started ===")
-
-    # 2. ファイル選択
-    target_file = select_file()
-    if not target_file:
-        logger.warning("ファイルが選択されませんでした。処理を中断します。")
-        return
-
-    logger.info(f"対象ファイル: {target_file}")
-
-    # 3. エクスポート準備
     workspace_dir = project_root / "workspace"
-    exporter = VBAExporter(workspace_dir)
     
+    target_file = select_file()
+    if not target_file: return
+
     ext = Path(target_file).suffix.lower()
-    
+    is_access = ext in ['.accdb', '.mdb']
+
     try:
-        # 4. エクスポート実行
-        if ext in ['.accdb', '.mdb']:
-            logger.info("Accessとして処理を開始します...")
-            output_path = exporter.export_access(target_file)
+        # 1. VBAエクスポート
+        exporter = VBAExporter(workspace_dir)
+        if is_access:
+            vba_path = exporter.export_access(target_file)
         elif ext == '.xlsm':
-            logger.info("Excelとして処理を開始します...")
-            output_path = exporter.export_excel(target_file)
-        else:
-            logger.error(f"未対応の拡張子です: {ext}")
-            return
-
-        logger.success(f"エクスポート完了: {output_path}")
-
-        # 5. GitHub同期の実行
-        logger.info("GitHub同期を開始します...")
-        git_mgr = GitManager(project_root)
+            vba_path = exporter.export_excel(target_file)
         
-        # コミットメッセージに対象ファイル名を含める
-        file_name = Path(target_file).name
-        git_mgr.sync_to_github(f"Auto-sync VBA: {file_name}")
+        logger.success(f"VBAエクスポート完了: {vba_path}")
 
-        print(f"\n【完了】エクスポートとGitHubへのPushが成功しました。")
-        print(f"場所: {output_path}")
+        # 2. Accessの場合のみSQL抽出を実行
+        if is_access:
+            logger.info("SQL資産の抽出を開始します...")
+            sql_extractor = AccessSQLExtractor(workspace_dir)
+            sql_path = sql_extractor.extract(target_file)
+            logger.success(f"SQL抽出完了: {sql_path}")
+
+        # 3. GitHub同期
+        git_mgr = GitManager(project_root)
+        file_name = Path(target_file).name
+        git_mgr.sync_to_github(f"Auto-sync VBA & SQL: {file_name}")
+
+        print(f"\n【完了】全資産のバックアップとPushに成功しました。")
 
     except Exception as e:
-        logger.exception(f"実行中にエラーが発生しました: {e}")
-        print(f"\n【エラー】処理に失敗しました。詳細はログを確認してください。")
+        logger.exception(f"エラー: {e}")
 
 if __name__ == "__main__":
     main()
