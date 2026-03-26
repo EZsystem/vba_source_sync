@@ -39,12 +39,19 @@ Public Const AT_LINK_KIHON_NAME As String = "at_基本工事名称_リンク"
 Public Const AT_MAPPING_INFO As String = "at_取込マッピング_Template"
 Public Const AQ_SEL_KIHON_NAME As String = "sel_基本工事名称"
 
+' --- 5. 原価管理システム (costManagement_統合分) ---
+Public Const AT_GENKA_IMPORT_WORK As String = "at_Temp_原価S_import"
+Public Const AT_GENKA_BASIC As String = "at_原価S_基本工事"
+Public Const AT_GENKA_BRANCH As String = "at_原価S_枝番工事"
+Public Const AT_GENKA_COL_SETTING As String = "at_原価S_ColSetting"
+Public Const AT_GENKA_MANUAL_FIX As String = "at_原価S_枝番工事_手動最終補正"
+
 '=================================================
 ' サブルーチン名 : Generate_MappingTemplate_FromList
 ' 概要   : マッピングひな型生成のメイン処理
 '=================================================
 Public Sub Generate_MappingTemplate_FromList()
-    Dim Db As DAO.Database: Set Db = CurrentDb
+    Dim db As DAO.Database: Set db = CurrentDb
     
     ' 本テーブル選択
     Dim tableMain As String
@@ -59,11 +66,11 @@ End Sub
 ' 内部関数 : Get_TableNameFromList
 '=================================================
 Private Function Get_TableNameFromList(promptTitle As String) As String
-    Dim Db As DAO.Database: Set Db = CurrentDb
+    Dim db As DAO.Database: Set db = CurrentDb
     Dim td As DAO.TableDef
     Dim tableList As String
     
-    For Each td In Db.TableDefs
+    For Each td In db.TableDefs
         If Left(td.Name, 4) <> "MSys" Then
             tableList = tableList & td.Name & ";"
         End If
@@ -93,9 +100,9 @@ End Function
 ' 内部処理 : Generate_MappingTemplateCore
 '=================================================
 Private Sub Generate_MappingTemplateCore(tableMain As String, tableTemp As String)
-    Dim Db As DAO.Database: Set Db = CurrentDb
-    Dim tdefMain As DAO.TableDef: Set tdefMain = Db.TableDefs(tableMain)
-    Dim tdefTemp As DAO.TableDef: Set tdefTemp = Db.TableDefs(tableTemp)
+    Dim db As DAO.Database: Set db = CurrentDb
+    Dim tdefMain As DAO.TableDef: Set tdefMain = db.TableDefs(tableMain)
+    Dim tdefTemp As DAO.TableDef: Set tdefTemp = db.TableDefs(tableTemp)
     
     Dim dictTempFields As Object: Set dictTempFields = CreateObject("Scripting.Dictionary")
     Dim fld As DAO.Field
@@ -104,7 +111,7 @@ Private Sub Generate_MappingTemplateCore(tableMain As String, tableTemp As Strin
     Next fld
     
     Dim rsMapping As DAO.Recordset
-    Set rsMapping = Db.OpenRecordset("[" & AT_MAPPING_INFO & "]", dbOpenDynaset)
+    Set rsMapping = db.OpenRecordset("[" & AT_MAPPING_INFO & "]", dbOpenDynaset)
     
     For Each fld In tdefMain.fields
         If (fld.Attributes And dbAutoIncrField) Or fld.Type = dbGUID Then GoTo NextField

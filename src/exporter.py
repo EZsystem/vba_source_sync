@@ -59,29 +59,26 @@ class VBAExporter:
 
     def _export_component(self, comp, app_type, target_dir):
         """個別コンポーネントのエクスポート実行ロジック"""
-        prefix = self._get_prefix(app_type, comp.Type)
+        # 接頭辞の構成要素を分解して取得
+        app_prefix = "xl_" if app_type == "excel" else "acc_"
+        type_map = {1: "mod", 2: "cls", 3: "frm", 100: "cls"}
+        kind_name = type_map.get(comp.Type, "mod")
+        full_prefix = f"{app_prefix}{kind_name}_"
+        
         name = comp.Name
         
-        # --- 追加条件の処理 ---
-        # 対象：Accessのクラス (Type 2:クラス, 100:Document) で、かつ名称に "com_" を含む場合
+        # 1. Accessクラスかつ "com_" を含む特殊ケース
         is_access_class = (app_type == "access" and comp.Type in [2, 100])
-        
         if is_access_class and ("com_" in name.lower()):
-            # パターン1：既に "acc_cls_" が付いている場合は除去する
-            # 例: acc_cls_com_clsDateMath -> com_clsDateMath
             if name.lower().startswith("acc_cls_"):
                 name = name[len("acc_cls_"):]
-            
-            # パターン2："com_" で始まっている場合は接頭辞(acc_cls_)の付与をスキップ
             if name.lower().startswith("com_"):
-                pass  # 接頭辞を付けずに確定
+                pass 
             else:
-                # それ以外（comが含まれるがcom_開始でない等）は通常の付与ロジックへ
-                name = self._apply_prefix_if_needed(name, prefix)
+                name = self._apply_prefix_if_needed(name, full_prefix, app_prefix, kind_name)
+        # 2. 通常のケース
         else:
-            # 通常の付与ロジック（Excelや標準モジュールなど）
-            name = self._apply_prefix_if_needed(name, prefix)
-        # ----------------------
+            name = self._apply_prefix_if_needed(name, full_prefix, app_prefix, kind_name)
             
         ext = ".bas" if comp.Type == 1 else ".cls"
         if comp.Type == 3: ext = ".frm"
@@ -89,10 +86,20 @@ class VBAExporter:
         export_path = target_dir / (name + ext)
         comp.Export(str(export_path))
 
-    def _apply_prefix_if_needed(self, name, prefix):
-        """接頭辞の二重付与を防止しながら適用する内部メソッド"""
-        base_prefix = prefix.rstrip("_")
-        if not (name.lower().startswith(prefix.lower()) or 
-                name.lower().startswith(base_prefix.lower())):
-            return prefix + name
-        return name
+    def _apply_prefix_if_needed(self, name, full_prefix, app_prefix, kind_name):
+        """接頭辞の重複を構造的にチェックして適用する"""
+        name_l = name.lower()
+        kind_prefix = kind_name + "_"  # 例: "mod_"
+        
+        # パターンA: すでにフル接頭辞がある (例: "acc_mod_..." または "acc_mod...")
+        full_base = full_prefix.rstrip("_")
+        if name_l.startswith(full_prefix.lower()) or name_l.startswith(full_base.lower()):
+            return name
+            
+        # パターンB: 種類接頭辞だけがある (例: "mod_..." または "mod...")
+        # この場合はアプリ名(acc_)だけを先頭に付与する
+        if name_l.startswith(kind_prefix.lower()) or name_l.startswith(kind_name.lower()):
+            return app_prefix + name
+            
+        # パターンC: 何も付いていない場合はフルで付与
+        return full_prefix + name

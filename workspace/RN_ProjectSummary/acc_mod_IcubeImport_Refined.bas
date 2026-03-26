@@ -26,7 +26,7 @@ Public Sub Run_IcubeImport_FullStep()
     Const EXCEL_END_C   As Long = 141    ' 取込終了列（EK列）
     Const KEY_FIELD     As String = "No" ' 重複排除および更新時のキーフィールド
 
-    Dim Db          As DAO.Database: Set Db = CurrentDb
+    Dim db          As DAO.Database: Set db = CurrentDb
     Dim wsTrans     As DAO.Workspace: Set wsTrans = DBEngine.Workspaces(0)
     
     ' インスタンス生成
@@ -46,17 +46,17 @@ Public Sub Run_IcubeImport_FullStep()
     If filePath = "" Then Exit Sub
 
     ' --- 3. クラスの初期化とインポート設定 ---
-    pImporter.Init Db
+    pImporter.Init db
     pImporter.TableName = TBL_TEMP
     pImporter.HeaderRow = EXCEL_HEADER
     pImporter.StartColumn = EXCEL_START_C
     pImporter.EndColumn = EXCEL_END_C
     
-    pTransfer.Init Db
+    pTransfer.Init db
 
     ' --- 4. マッピングルールのロード ---
     ' テーブル名を定数 AT_ICUBE_COL_SETTING に差し替え、角括弧で保護
-    Set RsMaster = Db.OpenRecordset("SELECT [タイトル名_デフォルト], [タイトル名_置換え後] FROM [" & AT_ICUBE_COL_SETTING & "] WHERE Nz(取込フラグ, False) = True")
+    Set RsMaster = db.OpenRecordset("SELECT [タイトル名_デフォルト], [タイトル名_置換え後] FROM [" & AT_ICUBE_COL_SETTING & "] WHERE Nz(取込フラグ, False) = True")
     Do Until RsMaster.EOF
         pImporter.AddMapping CStr(RsMaster![タイトル名_デフォルト]), CStr(RsMaster![タイトル名_置換え後])
         RsMaster.MoveNext
@@ -68,7 +68,7 @@ Public Sub Run_IcubeImport_FullStep()
     isInTrans = True
 
     ' --- 6. 仮テーブルのクリア ---
-    Db.Execute "DELETE FROM [" & TBL_TEMP & "];", 128 ' 128 = dbFailOnError
+    db.Execute "DELETE FROM [" & TBL_TEMP & "];", 128 ' 128 = dbFailOnError
     
     ' --- 7. Excelアプリケーション制御 ---
     Set xlApp = CreateObject("Excel.Application")

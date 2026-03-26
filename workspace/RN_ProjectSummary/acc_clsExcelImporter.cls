@@ -22,8 +22,8 @@ Public EndColumn      As Long   ' 終了列 (EK列なら141など)
 '===========================================================
 ' メソッド : Init
 '===========================================================
-Public Sub Init(ByRef Db As DAO.Database)
-    Set pConn = Db
+Public Sub Init(ByRef db As DAO.Database)
+    Set pConn = db
     Set pMapping = CreateObject("Scripting.Dictionary")
 End Sub
 

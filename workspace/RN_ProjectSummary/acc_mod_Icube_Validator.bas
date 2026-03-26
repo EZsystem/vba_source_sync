@@ -215,24 +215,24 @@ Private Sub Process_DateConversion_Smart(ByRef Cleaner As acc_clsDataCleaner)
 End Sub
 
 Private Sub Process_Update_Jurisdiction(ByRef ErrorLog As com_clsErrorUtility)
-    Dim Db As DAO.Database: Set Db = CurrentDb
-    Dim rsD As DAO.Recordset, RsT As DAO.Recordset, RsE As DAO.Recordset, Dict As Object
-    Set Dict = CreateObject("Scripting.Dictionary")
+    Dim db As DAO.Database: Set db = CurrentDb
+    Dim rsD As DAO.Recordset, RsT As DAO.Recordset, RsE As DAO.Recordset, dict As Object
+    Set dict = CreateObject("Scripting.Dictionary")
     
-    Set rsD = Db.OpenRecordset("SELECT ëgêDÉRÅ[Éh, é{çHä«äçëgêDÉRÅ[Éh FROM [" & AT_BRANCH_WORK_HISTORY & "]", dbOpenSnapshot)
+    Set rsD = db.OpenRecordset("SELECT ëgêDÉRÅ[Éh, é{çHä«äçëgêDÉRÅ[Éh FROM [" & AT_BRANCH_WORK_HISTORY & "]", dbOpenSnapshot)
     Do While Not rsD.EOF
-        If Not IsNull(rsD!ëgêDÉRÅ[Éh) Then Dict(Trim(CStr(rsD!ëgêDÉRÅ[Éh))) = rsD!é{çHä«äçëgêDÉRÅ[Éh
+        If Not IsNull(rsD!ëgêDÉRÅ[Éh) Then dict(Trim(CStr(rsD!ëgêDÉRÅ[Éh))) = rsD!é{çHä«äçëgêDÉRÅ[Éh
         rsD.MoveNext
     Loop
     rsD.Close
     
-    Set RsT = Db.OpenRecordset(AT_ICUBE, dbOpenDynaset)
-    Set RsE = Db.OpenRecordset(AT_ERR_SAGYOSHO, dbOpenDynaset)
+    Set RsT = db.OpenRecordset(AT_ICUBE, dbOpenDynaset)
+    Set RsE = db.OpenRecordset(AT_ERR_SAGYOSHO, dbOpenDynaset)
     Do While Not RsT.EOF
         Dim oC As String: oC = Trim(Nz(RsT!é{çHíSìñëgêDÉRÅ[Éh, ""))
-        If Dict.Exists(oC) Then
+        If dict.Exists(oC) Then
             RsT.Edit
-            RsT!é{çHä«äçëgêDÉRÅ[Éh = Dict(oC)
+            RsT!é{çHä«äçëgêDÉRÅ[Éh = dict(oC)
             RsT.Update
         Else
             RsE.AddNew
@@ -245,20 +245,20 @@ Private Sub Process_Update_Jurisdiction(ByRef ErrorLog As com_clsErrorUtility)
     Loop
     RsT.Close: RsE.Close
     
-    Set rsD = Db.OpenRecordset("SELECT é{çHä«äçëgêDÉRÅ[Éh, é{çHä«äçëgêDñº FROM [" & AT_JURISDICTION_MAP & "]", dbOpenSnapshot)
-    Dict.RemoveAll
+    Set rsD = db.OpenRecordset("SELECT é{çHä«äçëgêDÉRÅ[Éh, é{çHä«äçëgêDñº FROM [" & AT_JURISDICTION_MAP & "]", dbOpenSnapshot)
+    dict.RemoveAll
     Do While Not rsD.EOF
-        If Not IsNull(rsD!é{çHä«äçëgêDÉRÅ[Éh) Then Dict(Trim(CStr(rsD!é{çHä«äçëgêDÉRÅ[Éh))) = rsD!é{çHä«äçëgêDñº
+        If Not IsNull(rsD!é{çHä«äçëgêDÉRÅ[Éh) Then dict(Trim(CStr(rsD!é{çHä«äçëgêDÉRÅ[Éh))) = rsD!é{çHä«äçëgêDñº
         rsD.MoveNext
     Loop
     rsD.Close
     
-    Set RsT = Db.OpenRecordset(AT_ICUBE, dbOpenDynaset)
+    Set RsT = db.OpenRecordset(AT_ICUBE, dbOpenDynaset)
     Do While Not RsT.EOF
         Dim JC As String: JC = Trim(Nz(RsT!é{çHä«äçëgêDÉRÅ[Éh, ""))
-        If Dict.Exists(JC) Then
+        If dict.Exists(JC) Then
             RsT.Edit
-            RsT!é{çHä«äçëgêDñº = Dict(JC)
+            RsT!é{çHä«äçëgêDñº = dict(JC)
             RsT.Update
         End If
         RsT.MoveNext

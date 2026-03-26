@@ -17,13 +17,13 @@ Option Explicit
 '=================================================
 Public Sub Show_FieldInfo_FromList()
     ' --- 1. DAO.Database 取得 ---
-    Dim Db As DAO.Database
-    Set Db = CurrentDb
+    Dim db As DAO.Database
+    Set db = CurrentDb
     
     ' --- 2. テーブル一覧取得 ---
     Dim td As DAO.TableDef
     Dim tableList As String
-    For Each td In Db.TableDefs
+    For Each td In db.TableDefs
         If Left(td.Name, 4) <> "MSys" Then
             tableList = tableList & td.Name & ";"
         End If
@@ -87,13 +87,13 @@ End Function ' ← Get_ListChoice 終了
 '=================================================
 Public Sub Display_FieldInfo(TableName As String)
     ' --- 1. DAO.Database 取得 ---
-    Dim Db As DAO.Database
-    Set Db = CurrentDb
+    Dim db As DAO.Database
+    Set db = CurrentDb
     
     ' --- 2. テーブル存在確認 ---
     On Error Resume Next
     Dim tdef As DAO.TableDef
-    Set tdef = Db.TableDefs(TableName)
+    Set tdef = db.TableDefs(TableName)
     On Error GoTo 0
     If tdef Is Nothing Then
         MsgBox "テーブルが見つかりません : " & TableName, vbExclamation

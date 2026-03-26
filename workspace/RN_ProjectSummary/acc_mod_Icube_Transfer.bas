@@ -74,33 +74,33 @@ End Sub
 Private Sub TransferTable_Generic(ByVal SrcTable As String, ByVal DstTable As String, ByVal KeyField As String, ByRef ErrorLog As com_clsErrorUtility)
     On Error GoTo Err_Handler
     Dim DbObj As DAO.Database: Set DbObj = CurrentDb
-    Dim RsSrc As DAO.Recordset
+    Dim rsSrc As DAO.Recordset
     Dim RsDst As DAO.Recordset
     Dim fld As DAO.Field
-    Dim Criteria As String
+    Dim criteria As String
     Dim IsNumericKey As Boolean
 
-    Set RsSrc = DbObj.OpenRecordset("SELECT * FROM [" & SrcTable & "]", 1) ' 1 = dbOpenSnapshot
+    Set rsSrc = DbObj.OpenRecordset("SELECT * FROM [" & SrcTable & "]", 1) ' 1 = dbOpenSnapshot
     Set RsDst = DbObj.OpenRecordset("[" & DstTable & "]", 2) ' 2 = dbOpenDynaset
 
     ' キーフィールドの型判定 (数値型かテキスト型か)
-    IsNumericKey = (RsSrc.fields(KeyField).Type <> 10) ' 10 = dbText 以外を数値/日付扱いとする簡易判定
+    IsNumericKey = (rsSrc.fields(KeyField).Type <> 10) ' 10 = dbText 以外を数値/日付扱いとする簡易判定
 
-    Do While Not RsSrc.EOF
+    Do While Not rsSrc.EOF
         ' キーが空の場合はスキップ
-        If IsNull(RsSrc(KeyField).Value) Then GoTo NextRecord
+        If IsNull(rsSrc(KeyField).Value) Then GoTo NextRecord
         
         ' 抽出条件の組み立て
         If IsNumericKey Then
-            Criteria = "[" & KeyField & "] = " & RsSrc(KeyField).Value
+            criteria = "[" & KeyField & "] = " & rsSrc(KeyField).Value
         Else
-            Criteria = "[" & KeyField & "] = '" & Replace(RsSrc(KeyField).Value, "'", "''") & "'"
+            criteria = "[" & KeyField & "] = '" & Replace(rsSrc(KeyField).Value, "'", "''") & "'"
         End If
         
         ' 未存在時のみ追加
-        If DCount("*", "[" & DstTable & "]", Criteria) = 0 Then
+        If DCount("*", "[" & DstTable & "]", criteria) = 0 Then
             RsDst.AddNew
-            For Each fld In RsSrc.fields
+            For Each fld In rsSrc.fields
                 ' 転送先にフィールドが存在し、かつオートナンバー型(16)でない場合のみ転写
                 If Internal_FieldExists(RsDst, fld.Name) Then
                     If (RsDst.fields(fld.Name).Attributes And 16) = 0 Then
@@ -119,10 +119,10 @@ Private Sub TransferTable_Generic(ByVal SrcTable As String, ByVal DstTable As St
         End If
         
 NextRecord:
-        RsSrc.MoveNext
+        rsSrc.MoveNext
     Loop
     
-    RsSrc.Close: RsDst.Close
+    rsSrc.Close: RsDst.Close
     Exit Sub
 Err_Handler:
     ErrorLog.Notify_Smart_Popup DstTable & " Transfer Engine Error: " & Err.Description

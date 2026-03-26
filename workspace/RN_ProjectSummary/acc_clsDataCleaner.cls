@@ -11,7 +11,8 @@ Attribute VB_Exposed = False
 ' Class Module: acc_clsDataCleaner
 ' 説明：あらゆるデータ型の洗浄・変換を一括管理する。
 '       acc_clsTextSanitizer を内部に持ち、文字列・数値・日付の安全なクレンジングを行う。
-' 更新日：2026/03/24（MyLauncher統合・高機能クレンジング版）
+' 統合対応：原価管理（costManagement_）プロジェクトで必要な通貨型・浮動小数点型を追加。
+' 更新日：2026/03/26（RN/原価管理統合版）
 '===========================================================
 Option Explicit
 
@@ -72,15 +73,32 @@ Public Function CleanDouble(ByVal val As Variant, Optional ByVal defaultValue As
 End Function
 
 '===========================================================
+' 関数名 : CleanCurrency
+' 引数 : val - 変換対象の値
+'        defaultValue - エラー時の戻り値 (既定: 0)
+' 戻り値 : Currency
+' 機能 : 通貨型への変換。原価管理プロジェクトの金額項目等で使用。
+'===========================================================
+Public Function CleanCurrency(ByVal val As Variant, Optional ByVal defaultValue As Currency = 0) As Currency
+    If IsNull(val) Or Not IsNumeric(val) Then
+        CleanCurrency = defaultValue
+    Else
+        On Error Resume Next
+        CleanCurrency = CCur(val)
+        If Err.Number <> 0 Then CleanCurrency = defaultValue
+    End If
+End Function
+
+'===========================================================
 ' 関数名 : CleanDate
 ' 引数 : val - 変換対象の値
-' 戻り値 : Date (不正な場合は 1900/01/01 を返す)
+'        defaultDate - 不正な場合の戻り値（既定: 1900/01/01）
+' 戻り値 : Date
+' 機能 : 8桁/6桁の数値形式を含め、安全に日付型へ変換する。
 '===========================================================
-Public Function CleanDate(ByVal val As Variant) As Date
-    Dim minDate As Date: minDate = #1/1/1900#
-    
+Public Function CleanDate(ByVal val As Variant, Optional ByVal defaultDate As Date = #1/1/1900#) As Date
     If IsNull(val) Or val = "" Then
-        CleanDate = minDate
+        CleanDate = defaultDate
         Exit Function
     End If
     
@@ -92,7 +110,7 @@ Public Function CleanDate(ByVal val As Variant) As Date
         If pDateMath.IsValid Then
             CleanDate = DateSerial(pDateMath.Year, pDateMath.Month, pDateMath.Day)
         Else
-            CleanDate = minDate
+            CleanDate = defaultDate
         End If
     End If
 End Function
@@ -109,9 +127,9 @@ Public Function GetSupportedVBAType(ByVal jpType As String) As String
         Case "テキスト型", "メモ型": GetSupportedVBAType = "String"
         Case "長整数型", "オートナンバー型": GetSupportedVBAType = "Long"
         Case "整数型": GetSupportedVBAType = "Integer"
-        Case "倍精度浮動小数点型", "数値型": GetSupportedVBAType = "Double"
+        Case "倍精度浮動小数点型", "数値型", "倍精度型": GetSupportedVBAType = "Double"
         Case "通貨型": GetSupportedVBAType = "Currency"
-        Case "日付/時刻型": GetSupportedVBAType = "Date"
+        Case "日付/時刻型", "日付型": GetSupportedVBAType = "Date"
         Case "Yes/No型": GetSupportedVBAType = "Boolean"
         Case Else: GetSupportedVBAType = "Variant"
     End Select
