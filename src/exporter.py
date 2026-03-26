@@ -60,10 +60,15 @@ class VBAExporter:
     def _export_component(self, comp, app_type, target_dir):
         """個別コンポーネントのエクスポート実行ロジック"""
         prefix = self._get_prefix(app_type, comp.Type)
+        # 比較用にアンダースコアを除去したベースの接頭辞を作成 (例: acc_cls_ -> acc_cls)
+        base_prefix = prefix.rstrip("_")
         
         # 命名規則の適用（二重付与防止）
         name = comp.Name
-        if not name.lower().startswith(prefix.lower()):
+        
+        # 「アンダースコアあり」または「アンダースコアなし」のいずれかで始まっていれば重複とみなす
+        if not (name.lower().startswith(prefix.lower()) or 
+                name.lower().startswith(base_prefix.lower())):
             name = prefix + name
             
         ext = ".bas" if comp.Type == 1 else ".cls"
