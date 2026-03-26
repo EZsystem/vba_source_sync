@@ -54,6 +54,12 @@ def main():
         else:
             logger.info(f"Excelとして処理を開始します: {target_file}")
             output_path = exporter.export_excel(target_file)
+        
+            # --- ここを追加 ---
+            logger.info("Excel構成情報の抽出を開始します...")
+            excel_extractor = ExcelInfoExtractor(workspace_dir)
+            excel_extractor.extract(target_file)
+            # -----------------
 
         logger.success(f"エクスポート完了: {target_file}")
 

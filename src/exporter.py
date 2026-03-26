@@ -144,3 +144,47 @@ class AccessSQLExtractor:
         type_map = {1: "YESNO", 3: "INTEGER", 4: "LONG", 5: "CURRENCY", 
                     6: "SINGLE", 7: "DOUBLE", 8: "DATETIME", 10: "TEXT", 12: "MEMO"}
         return type_map.get(type_id, "TEXT")
+    
+class ExcelInfoExtractor:
+    """Excelのシート構成やテーブル（ListObject）情報を抽出するクラス"""
+    def __init__(self, workspace_dir):
+        self.workspace_dir = Path(workspace_dir)
+
+    def extract(self, file_path):
+        file_path = os.path.abspath(file_path)
+        root_dir = self.workspace_dir / Path(file_path).stem / "excel_info"
+        
+        if root_dir.exists():
+            shutil.rmtree(root_dir)
+        root_dir.mkdir(parents=True, exist_ok=True)
+
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = False
+        try:
+            wb = excel.Workbooks.Open(file_path, ReadOnly=True)
+            info_lines = [f"Excel File: {Path(file_path).name}", "="*50, ""]
+
+            for sheet in wb.Worksheets:
+                info_lines.append(f"■ Sheet: {sheet.Name}")
+                
+                # テーブル（ListObject）の情報を取得
+                if sheet.ListObjects.Count > 0:
+                    for lo in sheet.ListObjects:
+                        info_lines.append(f"  └─ Table: {lo.Name}")
+                        info_lines.append(f"     Range: {lo.Range.Address}")
+                        # ヘッダー項目を取得
+                        headers = [str(cell.Value) for cell in lo.HeaderRowRange]
+                        info_lines.append(f"     Columns: {', '.join(headers)}")
+                else:
+                    info_lines.append("  (No Tables)")
+                info_lines.append("")
+
+            # テキストファイルとして保存
+            output_file = root_dir / "workbook_structure.txt"
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write("\n".join(info_lines))
+
+            wb.Close(False)
+            return root_dir
+        finally:
+            excel.Quit()
