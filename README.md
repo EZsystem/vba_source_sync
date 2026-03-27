@@ -1,36 +1,62 @@
-# VBAクラス変換 (Class Header Fixer)
+# VBA Management Tools
 
-## 概要
-VBAのクラスモジュール（.cls）を外部からインポートする際、属性ヘッダーがないために「標準モジュール」として誤認識される問題を解消するためのツールです。
-エクスポートされたテキストファイルの先頭に、VBA実行環境がクラスとして認識するために必要な属性定義を一括で付与します。
+VBA開発における「資産のバックアップ・同期」と「クラスモジュールのインポート修復」を効率化するためのツール群です。
 
-## 主な機能
-- **一括属性付与**: 複数の .cls / .txt ファイルを選択し、一括でヘッダーを挿入します。
-- **二重処理防止**: 既に `VERSION 1.0 CLASS` 等のヘッダーが存在するファイルは自動的にスキップします。
-- **Shift-JIS維持**: VBAとの互換性を保つため、エンコーディングを `Shift-JIS (CP932)` で固定して処理します。
-- **自動クラス名設定**: ファイル名を `Attribute VB_Name` に自動反映します。
+## 1. VBA Source Sync System (Exporter & Sync)
+OfficeファイルからVBAコードやデータベース構造を抽出し、GitHubで管理します。
 
-## 開発環境 / 使用技術
-- [cite_start]**Python**: 3.12 (64-bit) [cite: 1106]
-- [cite_start]**GUI**: customtkinter (Modern UI) [cite: 1103]
-- [cite_start]**Environment**: python-dotenv [cite: 1103]
+### 🛠 主な機能
+- **VBAエクスポート**: Excel/Accessからモジュール、クラス、フォームを自動抽出。
+- **Access SQL抽出**: クエリのSQL文および主キーを含むテーブル構造（DDL）の書き出し。
+- **Excel構成情報の可視化**: シート一覧、テーブル名、範囲、列定義をテキスト化。
+- **GitHub自動同期**: 変更分を自動コミットしてPush。
 
-## 構築手順
-1. `D:\My_code\03_Tools\vba_class_fixer` にて仮想環境を作成。
-   ```bash
-   C:\python64\python.exe -m venv .venv
+### 💻 実行環境
+- **Python**: 32-bit版（Office COM操作のため）
+- **主なライブラリ**: `pywin32`, `loguru`, `GitPython`
+- **場所**: `D:\My_code\11_workspaces\VBA_manager\vba_source_sync`
 
-必要ライブラリのインストール。
+---
+
+## 2. VBA Class Header Fixer (Importer Prep)
+外部からインポートする際にクラスモジュール（.cls）が「標準モジュール」として誤認識される問題を解消します。
+
+### 🛠 主な機能
+- **一括属性付与**: 選択したファイルの先頭に、VBA環境に必要なクラス属性定義を挿入。
+- **Shift-JIS維持**: VBAとの互換性を保つため `CP932` エンコーディングを固定。
+- **自動クラス名設定**: ファイル名から `Attribute VB_Name` を自動生成。
+
+### 💻 開発環境
+- **Python**: 3.12 (64-bit)
+- **GUI**: `customtkinter` (Modern UI)
+- **場所**: `D:\My_code\03_Tools\vba_class_fixer`
+
+---
+
+## 📁 全体フォルダ構成
+
+```text
+VBA_manager/
+├── vba_source_sync/ (32-bit Env)
+│   ├── bin/           # main.py (実行スクリプト)
+│   ├── src/           # 抽出・Git同期ロジック
+│   └── workspace/     # 抽出済み資産 (vba/, sql/, excel_info/)
+└── vba_class_fixer/ (64-bit Env)
+    ├── bin/           # main.py, config.py
+    └── .env           # DEFAULT_VBA_DIR 等の設定
+
+
+🚀 共通の事前準備
+Excelセキュリティ設定 (Source Sync用)
+ExcelのVBAを抽出するために、以下の設定が必要です：
+[ファイル] > [オプション] > [トラスト センター] > [マクロの設定] を開く。
+「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」 にチェック。
+仮想環境の構築
+各プロジェクトのフォルダにて仮想環境を作成し、必要なライブラリをインストールしてください。
 Bash
+# Source Sync (32-bit)
+pip install pywin32 loguru GitPython
+
+# Class Fixer (64-bit)
 pip install customtkinter python-dotenv
 
-
-
-
-フォルダ構成
-bin/: 実行スクリプト（main.py, config.py）
-.venv/: プロジェクト専用仮想環境
-.env: 環境設定（DEFAULT_VBA_DIR 等）
-開発メモ
-エンコーディング注意: VBAは内部的にShift-JISを期待するため、UTF-8への変換は行わないこと。
-属性定義: Attribute VB_Exposed = False 等の標準的なクラス設定をデフォルト値として採用。
