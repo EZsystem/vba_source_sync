@@ -17,12 +17,12 @@ Private Const BASE_YEAR As Integer = 2012
 '---------------------------------------------------------------------------------------------------
 
 ' Phase 1-2
-Public Sub Process_BasicValidation_And_Split(ByRef Cleaner As acc_clsDataCleaner, ByRef ErrorLog As com_clsErrorUtility)
+Public Sub Process_BasicValidation_And_Split(ByRef cleaner As acc_clsDataCleaner, ByRef ErrorLog As com_clsErrorUtility)
     On Error GoTo Err_Handler
     Call Process_Judge_OneTimeProject
     Call Process_Copy_Empty_ProjectInfo
     Call Process_Merge_BranchCode
-    Call Process_DateConversion_Smart(Cleaner)
+    Call Process_DateConversion_Smart(cleaner)
     Call Process_Update_Jurisdiction(ErrorLog)
     Call Process_Split_ProjectNames
     Call Process_Calculate_PeriodFromName
@@ -188,7 +188,7 @@ Private Sub Process_Merge_BranchCode()
     CurrentDb.Execute "UPDATE [" & AT_ICUBE & "] SET 枝番工事コード = Nz(工事コード,'') & '-' & Nz(工事枝番,'')", dbFailOnError
 End Sub
 
-Private Sub Process_DateConversion_Smart(ByRef Cleaner As acc_clsDataCleaner)
+Private Sub Process_DateConversion_Smart(ByRef cleaner As acc_clsDataCleaner)
     Dim rs As DAO.Recordset
     Dim Flds As Variant: Flds = Array("[データ年月（受注計上年月）]", "[完成年月日（枝番単位）]")
     Dim Prfx As Variant: Prfx = Array("受注", "完工")
@@ -198,7 +198,7 @@ Private Sub Process_DateConversion_Smart(ByRef Cleaner As acc_clsDataCleaner)
         TargetFld = IIf(Prfx(i) = "受注", "受注計上日_日付型", Prfx(i) & "日_日付型")
         Set rs = CurrentDb.OpenRecordset("SELECT No, " & Flds(i) & ", " & Prfx(i) & "年度, " & Prfx(i) & "期, " & Prfx(i) & "Q, " & Prfx(i) & "月, " & TargetFld & " FROM [" & AT_ICUBE & "]", dbOpenDynaset)
         Do While Not rs.EOF
-            TDate = Cleaner.CleanDate(rs.fields(1).Value)
+            TDate = cleaner.CleanDate(rs.fields(1).Value)
             If Year(TDate) > 1900 Then
                 rs.Edit
                 rs.fields(Prfx(i) & "年度").Value = GetFiscalYear(TDate)

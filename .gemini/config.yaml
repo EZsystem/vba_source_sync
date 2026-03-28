@@ -1,0 +1,8 @@
+# .gemini/config.yaml
+version: 1
+project:
+  # Geminiが優先的に読み込むべき、または無視すべきファイルを指定
+  exclude:
+    - "**/Backup/**"
+    - "**/*.tmp"
+    - "**/old_versions/**"
