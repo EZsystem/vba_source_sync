@@ -1,4 +1,4 @@
-﻿CREATE TABLE [at_原価S_基本工事] (
+CREATE TABLE [at_原価S_基本工事] (
     [基本工事コード] TEXT,
     [基本工事名] TEXT,
     [工事価格] CURRENCY,

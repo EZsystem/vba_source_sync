@@ -1,4 +1,4 @@
-﻿CREATE TABLE [at_Temp_Icube_Import] (
+CREATE TABLE [at_Temp_Icube_Import] (
     [No] TEXT,
     [データ年月（受注計上年月）] TEXT,
     [支店コード] TEXT,

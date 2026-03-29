@@ -1,4 +1,5 @@
 ﻿Attribute VB_Name = "acc_mod_ImportTest"
+'Attribute VB_Name = "acc_mod_ImportTest"
 Option Compare Database
 Option Explicit
 
@@ -25,7 +26,11 @@ Public Sub Execute_All_Genka_Process()
         Exit Sub
     End If
     
-    MsgBox "すべてのインポートとデータ加工が正常に完了しました！", vbInformation
+    ' 追加: テストテーブルから本番テーブルへの転写・属性補正処理をシームレスに呼び出し
+    Debug.Print "=== 本番テーブルへのデータ転写を開始します ==="
+    Call acc_mod_Genka_Main.Import_GenkaData_ToMain
+    
+    ' ※Import_GenkaData_ToMain内部で完了通知が実行されるため、ここでのポップアップは不要
 End Sub
 
 
@@ -275,5 +280,7 @@ Err_Handler:
     Extract_Test3_F2_Values = False
     Resume Exit_Sub
 End Function
+
+
 
 

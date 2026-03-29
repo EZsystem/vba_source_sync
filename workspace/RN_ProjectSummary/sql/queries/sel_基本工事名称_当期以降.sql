@@ -1,4 +1,4 @@
-﻿SELECT 
+SELECT 
     [Icube_累計].[s基本工事コード] AS s基本工事コード,
     [Icube_累計].[s基本工事名称] AS s基本工事名称,
     [Icube_累計].[仮基本工事コード] AS 仮基本工事コード,

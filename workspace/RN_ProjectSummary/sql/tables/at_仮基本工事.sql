@@ -1,4 +1,4 @@
-﻿CREATE TABLE [at_仮基本工事] (
+CREATE TABLE [at_仮基本工事] (
     [仮基本工事コード] TEXT,
     [仮基本工事名称] TEXT,
     [施工管轄組織名] TEXT,

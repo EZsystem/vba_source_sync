@@ -1,4 +1,4 @@
-﻿SELECT kt.s基本工事コード, kt.s基本工事名称, kt.施工管轄組織名
+SELECT kt.s基本工事コード, kt.s基本工事名称, kt.施工管轄組織名
 FROM at_Icube_累計 AS kt LEFT JOIN at_原価S_基本工事 AS g ON kt.基本工事コード = g.基本工事コード
 GROUP BY kt.s基本工事コード, kt.s基本工事名称, kt.施工管轄組織名, kt.施工管轄組織コード, kt.所属組織名, kt.一件工事判定, kt.完工期, g.基本工事コード
 HAVING (((kt.所属組織名)="ＬＣＳ事業部") 

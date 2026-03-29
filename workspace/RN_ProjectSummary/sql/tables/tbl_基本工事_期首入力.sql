@@ -1,4 +1,4 @@
-﻿CREATE TABLE [tbl_基本工事_期首入力] (
+CREATE TABLE [tbl_基本工事_期首入力] (
     [仮基本工事コード] TEXT,
     [基本工事コード_仮] TEXT,
     [基本工事名称_仮] TEXT,

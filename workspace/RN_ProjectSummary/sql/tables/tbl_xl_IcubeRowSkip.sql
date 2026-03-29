@@ -1,4 +1,4 @@
-﻿CREATE TABLE [tbl_xl_IcubeRowSkip] (
+CREATE TABLE [tbl_xl_IcubeRowSkip] (
     [ID] LONG,
     [対象フィールド名] TEXT,
     [削除対象値] TEXT,

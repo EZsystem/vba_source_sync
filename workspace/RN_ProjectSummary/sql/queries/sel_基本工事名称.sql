@@ -1,4 +1,4 @@
-﻿SELECT DISTINCT s基本工事コード, s基本工事名称, 完工期, 完工Q, 施工管轄組織名, 一件工事判定
+SELECT DISTINCT s基本工事コード, s基本工事名称, 完工期, 完工Q, 施工管轄組織名, 一件工事判定
 FROM (SELECT 
         Icube_.s基本工事コード AS s基本工事コード,
         Icube_.s基本工事名称 AS s基本工事名称,

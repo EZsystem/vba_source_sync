@@ -1,4 +1,4 @@
-﻿CREATE TABLE [at_Icube_累計] (
+CREATE TABLE [at_Icube_累計] (
     [No] LONG,
     [データ年月（受注計上年月）] LONG,
     [工事コード] TEXT,

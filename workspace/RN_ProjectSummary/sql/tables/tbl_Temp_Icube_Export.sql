@@ -1,4 +1,4 @@
-﻿CREATE TABLE [tbl_Temp_Icube_Export] (
+CREATE TABLE [tbl_Temp_Icube_Export] (
     [No] LONG,
     [データ年月（受注計上年月）] LONG,
     [工事コード] TEXT,

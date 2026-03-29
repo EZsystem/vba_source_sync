@@ -1,4 +1,4 @@
-﻿CREATE TABLE [at_Test_Raw_Import] (
+CREATE TABLE [at_Test_Raw_Import] (
     [F1] TEXT,
     [F2] TEXT,
     [F3] TEXT,

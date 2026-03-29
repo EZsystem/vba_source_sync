@@ -1,4 +1,4 @@
-﻿CREATE TABLE [✕at_Temp_原価S_import_test] (
+CREATE TABLE [✕at_Temp_原価S_import_test] (
     [F1] TEXT,
     [F2] TEXT,
     [F3] TEXT,

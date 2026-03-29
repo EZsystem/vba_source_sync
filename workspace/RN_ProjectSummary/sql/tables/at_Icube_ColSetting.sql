@@ -1,4 +1,4 @@
-﻿CREATE TABLE [at_Icube_ColSetting] (
+CREATE TABLE [at_Icube_ColSetting] (
     [配列列番号] LONG,
     [デフォルトタイトルフィールド名] TEXT,
     [タイトル名_デフォルト] TEXT,

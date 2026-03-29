@@ -7,6 +7,15 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'VERSION 1.0 CLASS
+'BEGIN
+'  MultiUse = -1  'True
+'END
+'Attribute VB_Name = "acc_clsTableTransfer"
+'Attribute VB_GlobalNameSpace = False
+'Attribute VB_Creatable = False
+'Attribute VB_PredeclaredId = False
+'Attribute VB_Exposed = False
 
 '===========================================================
 ' Class Module: acc_clsTableTransfer
@@ -58,7 +67,27 @@ Public Sub ExecuteTransferWithRules(ByVal src As String, ByVal tgt As String, By
                     Dim rule As Variant: rule = ruleDict(fldName)
                     
                     ' rule(0) はデータ型名、rule(1) はデフォルト値
-                    rsTgt(CStr(fldName)).Value = ConvertByRule(rawVal, CStr(rule(0)), rule(1))
+                    ' 値がNullや空文字の場合は上書きをスキップする (Access側の既定値／Nullが維持される)
+                    If Not IsNull(rawVal) Then
+                        If Trim(CStr(rawVal)) <> "" Then
+                           
+                            On Error Resume Next
+                            Dim convVal As Variant
+                            convVal = ConvertByRule(rawVal, CStr(rule(0)), rule(1))
+                            
+                            If Err.Number <> 0 Then
+                                Debug.Print "    *** 変換エラー ***: 項目=[" & fldName & "], 元値=[" & rawVal & "], " & Err.Description
+                                Err.Clear
+                            Else
+                                rsTgt(CStr(fldName)).Value = convVal
+                                If Err.Number <> 0 Then
+                                    Debug.Print "    *** 格納エラー ***: 項目=[" & fldName & "], 変換後値=[" & convVal & "], " & Err.Description
+                                    Err.Clear
+                                End If
+                            End If
+                            On Error GoTo 0
+                        End If
+                    End If
                 End If
             End If
         Next
@@ -103,7 +132,9 @@ Private Function ConvertByRule(ByVal val As Variant, ByVal typeName As String, B
     Select Case typeName
         Case "テキスト型":   ConvertByRule = pCleaner.CleanText(val, CStr(Nz(defVal, "")))
         Case "長整数型":     ConvertByRule = pCleaner.CleanLong(val, CLng(Nz(defVal, 0)))
-        Case "倍精度型", "倍精度浮動小数点型": ConvertByRule = pCleaner.CleanDouble(val, CDbl(Nz(defVal, 0)))
+        Case "倍精度型", "倍精度浮動小数点型"
+            ' %つきの文字列対策（15.90% など）
+            ConvertByRule = pCleaner.CleanDouble(val, CDbl(Nz(defVal, 0)))
         Case "通貨型":       ConvertByRule = pCleaner.CleanCurrency(val, CCur(Nz(defVal, 0)))
         Case "日付型", "日付/時刻型": ConvertByRule = pCleaner.CleanDate(val, CDate(Nz(defVal, #12/31/2099#)))
         Case Else:           ConvertByRule = val
@@ -143,3 +174,4 @@ Private Sub GetFieldLists_Internal(ByVal src As String, ByVal tgt As String, ByR
         outSelect = Left(selList, Len(selList) - 2)
     End If
 End Sub
+

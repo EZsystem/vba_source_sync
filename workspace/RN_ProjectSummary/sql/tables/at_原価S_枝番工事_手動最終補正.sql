@@ -1,4 +1,4 @@
-﻿CREATE TABLE [at_原価S_枝番工事_手動最終補正] (
+CREATE TABLE [at_原価S_枝番工事_手動最終補正] (
     [ID] LONG,
     [工事コード] TEXT,
     [管理番号] TEXT,
