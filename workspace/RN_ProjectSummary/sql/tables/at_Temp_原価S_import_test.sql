@@ -1,4 +1,4 @@
-CREATE TABLE [at_Temp_原価S_import_test] (
+﻿CREATE TABLE [at_Temp_原価S_import_test] (
     [基本工事コード] TEXT,
     [基本工事名] TEXT,
     [工事コード] TEXT,

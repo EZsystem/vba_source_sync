@@ -1,4 +1,4 @@
-CREATE TABLE [tbl_予定工事_随時更新] (
+﻿CREATE TABLE [tbl_予定工事_随時更新] (
     [仮基本工事コード] TEXT,
     [基本工事コード_仮] TEXT,
     [基本工事名称_仮] TEXT,

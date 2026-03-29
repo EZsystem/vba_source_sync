@@ -1,4 +1,4 @@
-CREATE TABLE [at_原価S_ColSetting] (
+﻿CREATE TABLE [at_原価S_ColSetting] (
     [配列列番号] LONG,
     [配列タイトル名] TEXT,
     [accテーブル名] TEXT,

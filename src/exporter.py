@@ -5,8 +5,9 @@ from pathlib import Path
 from loguru import logger
 
 class VBAExporter:
-    def __init__(self, workspace_dir):
+    def __init__(self, workspace_dir, encoding="utf-8-sig"):
         self.workspace_dir = Path(workspace_dir)
+        self.encoding = encoding
 
     def _get_prefix(self, app_type, comp_type):
         app_prefix = "xl_" if app_type == "excel" else "acc_"
@@ -75,6 +76,15 @@ class VBAExporter:
         
         export_path = target_dir / (name + ext)
         comp.Export(str(export_path))
+        
+        # 指定された文字コードへ再エンコード (デフォルトはShift-JISで出力されるため)
+        try:
+            with open(export_path, 'r', encoding='shift_jis', errors='replace') as f:
+                content = f.read()
+            with open(export_path, 'w', encoding=self.encoding) as f:
+                f.write(content)
+        except Exception as e:
+            logger.error(f"ファイル {export_path.name} の文字コード変換に失敗しました: {e}")
 
     def _apply_prefix_if_needed(self, name, full_prefix, app_prefix, kind_name):
         name_l = name.lower()
@@ -89,8 +99,9 @@ class VBAExporter:
 
 class AccessSQLExtractor:
     """Accessのクエリとテーブル構造をSQLとして抽出するクラス"""
-    def __init__(self, workspace_dir):
+    def __init__(self, workspace_dir, encoding="utf-8"):
         self.workspace_dir = Path(workspace_dir)
+        self.encoding = encoding
 
     def extract(self, file_path):
         file_path = os.path.abspath(file_path)
@@ -110,7 +121,7 @@ class AccessSQLExtractor:
             query_dir.mkdir(exist_ok=True)
             for qdf in db.QueryDefs:
                 if not qdf.Name.startswith("~"):
-                    with open(query_dir / f"{qdf.Name}.sql", "w", encoding="utf-8") as f:
+                    with open(query_dir / f"{qdf.Name}.sql", "w", encoding=self.encoding) as f:
                         f.write(qdf.SQL)
 
             # 2. テーブル構造抽出
@@ -132,7 +143,7 @@ class AccessSQLExtractor:
                         sql_lines.append(f"    CONSTRAINT PK_{tdf.Name} PRIMARY KEY ({', '.join(pk_fields)})")
                     
                     create_sql = f"CREATE TABLE [{tdf.Name}] (\n" + ",\n".join(sql_lines) + "\n);"
-                    with open(table_dir / f"{tdf.Name}.sql", "w", encoding="utf-8") as f:
+                    with open(table_dir / f"{tdf.Name}.sql", "w", encoding=self.encoding) as f:
                         f.write(create_sql)
 
             db.Close()
@@ -147,8 +158,9 @@ class AccessSQLExtractor:
     
 class ExcelInfoExtractor:
     """Excelのシート構成やテーブル（ListObject）情報を抽出するクラス"""
-    def __init__(self, workspace_dir):
+    def __init__(self, workspace_dir, encoding="utf-8"):
         self.workspace_dir = Path(workspace_dir)
+        self.encoding = encoding
 
     def extract(self, file_path):
         file_path = os.path.abspath(file_path)
@@ -181,7 +193,7 @@ class ExcelInfoExtractor:
 
             # テキストファイルとして保存
             output_file = root_dir / "workbook_structure.txt"
-            with open(output_file, "w", encoding="utf-8") as f:
+            with open(output_file, "w", encoding=self.encoding) as f:
                 f.write("\n".join(info_lines))
 
             wb.Close(False)

@@ -1,4 +1,4 @@
-CREATE TABLE [at_基本工事名称_リンク] (
+﻿CREATE TABLE [at_基本工事名称_リンク] (
     [s基本工事コード] TEXT,
     [s基本工事名称] TEXT,
     [完工期] TEXT,

@@ -1,4 +1,4 @@
-CREATE TABLE [at_支店作業所_累計] (
+﻿CREATE TABLE [at_支店作業所_累計] (
     [部門コード] TEXT,
     [部門] TEXT,
     [組織コード] TEXT,

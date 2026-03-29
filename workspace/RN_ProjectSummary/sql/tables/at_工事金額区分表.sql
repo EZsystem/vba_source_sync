@@ -1,4 +1,4 @@
-CREATE TABLE [at_工事金額区分表] (
+﻿CREATE TABLE [at_工事金額区分表] (
     [ID] LONG,
     [工事金額区分コード] TEXT,
     [工事金額区分名] TEXT,

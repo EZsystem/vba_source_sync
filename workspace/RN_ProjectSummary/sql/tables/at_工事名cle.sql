@@ -1,4 +1,4 @@
-CREATE TABLE [at_工事名cle] (
+﻿CREATE TABLE [at_工事名cle] (
     [発注者名_tbl] TEXT,
     [発注者コード] TEXT,
     [トリガーワード] TEXT,

@@ -1,4 +1,4 @@
-CREATE TABLE [_at_SystemRegistry] (
+﻿CREATE TABLE [_at_SystemRegistry] (
     [ID] LONG,
     [業務区分] TEXT,
     [処理名称] TEXT,

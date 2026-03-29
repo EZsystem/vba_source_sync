@@ -1,4 +1,4 @@
-CREATE TABLE [at_基本工事_完工] (
+﻿CREATE TABLE [at_基本工事_完工] (
     [データ年月（受注計上年月）] LONG,
     [基本工事コード] TEXT,
     [基本工事名称] TEXT,

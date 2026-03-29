@@ -1,4 +1,4 @@
-CREATE TABLE [at_建物用途正誤表] (
+﻿CREATE TABLE [at_建物用途正誤表] (
     [ID] LONG,
     [誤_用途大区分] TEXT,
     [誤_用途大区分名] TEXT,

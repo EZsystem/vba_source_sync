@@ -1,4 +1,4 @@
-CREATE TABLE [t_エラー値置換え対象] (
+﻿CREATE TABLE [t_エラー値置換え対象] (
     [ID] LONG,
     [フィールド名] TEXT,
     [エラー値置換え有無] YESNO,

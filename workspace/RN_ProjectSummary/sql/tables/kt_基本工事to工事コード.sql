@@ -1,4 +1,4 @@
-CREATE TABLE [kt_基本工事to工事コード] (
+﻿CREATE TABLE [kt_基本工事to工事コード] (
     [基本工事コード] TEXT,
     [基本工事名称] TEXT,
     [仮基本工事コード] TEXT,
