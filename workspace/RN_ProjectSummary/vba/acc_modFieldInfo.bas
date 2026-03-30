@@ -85,7 +85,7 @@ End Function ' ← Get_ListChoice 終了
 ' 引数   : tableName（String） テーブル名
 ' 戻り値 : なし
 '=================================================
-Public Sub Display_FieldInfo(TableName As String)
+Public Sub Display_FieldInfo(tableName As String)
     ' --- 1. DAO.Database 取得 ---
     Dim db As DAO.Database
     Set db = CurrentDb
@@ -93,16 +93,16 @@ Public Sub Display_FieldInfo(TableName As String)
     ' --- 2. テーブル存在確認 ---
     On Error Resume Next
     Dim tdef As DAO.TableDef
-    Set tdef = db.TableDefs(TableName)
+    Set tdef = db.TableDefs(tableName)
     On Error GoTo 0
     If tdef Is Nothing Then
-        MsgBox "テーブルが見つかりません : " & TableName, vbExclamation
+        MsgBox "テーブルが見つかりません : " & tableName, vbExclamation
         Exit Sub
     End If
     
     ' --- 3. フィールド情報出力 ---
     Dim fld As DAO.Field
-    Debug.Print "【テーブル名】 " & TableName
+    Debug.Print "【テーブル名】 " & tableName
     Debug.Print String(30, "-")
     For Each fld In tdef.Fields
         Debug.Print fld.Name & " : " & GetFieldTypeName(fld.Type)

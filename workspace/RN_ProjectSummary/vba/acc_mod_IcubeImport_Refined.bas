@@ -47,7 +47,7 @@ Public Sub Run_IcubeImport_FullStep()
 
     ' --- 3. クラスの初期化とインポート設定 ---
     pImporter.Init db
-    pImporter.TableName = TBL_TEMP
+    pImporter.tableName = TBL_TEMP
     pImporter.HeaderRow = EXCEL_HEADER
     pImporter.StartColumn = EXCEL_START_C
     pImporter.EndColumn = EXCEL_END_C

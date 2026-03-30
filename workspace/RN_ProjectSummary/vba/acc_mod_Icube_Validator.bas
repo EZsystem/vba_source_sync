@@ -37,24 +37,24 @@ End Sub
 Public Sub Process_Category_And_Price(ByRef ErrorLog As com_clsErrorUtility)
     On Error GoTo Err_Handler
     Dim DbObj As DAO.Database: Set DbObj = CurrentDb
-    Dim RsMain As DAO.Recordset, RsMap As DAO.Recordset
+    Dim RsMain As DAO.Recordset, rsMap As DAO.Recordset
     Dim RawText As String, ProjectPrice As Currency
 
     ' Phase 3: 用途補正 (OpenRecordset に直接渡す場合は括弧なし)
     Set RsMain = DbObj.OpenRecordset(AT_ICUBE, dbOpenDynaset)
-    Set RsMap = DbObj.OpenRecordset(AT_BUILDING_USE_MAP, dbOpenSnapshot)
+    Set rsMap = DbObj.OpenRecordset(AT_BUILDING_USE_MAP, dbOpenSnapshot)
     Do While Not RsMain.EOF
         RawText = Trim(Nz(RsMain!用途大区分, ""))
-        RsMap.MoveFirst
-        Do While Not RsMap.EOF
-            If RawText = Trim(Nz(RsMap!誤_用途大区分, "")) Then
+        rsMap.MoveFirst
+        Do While Not rsMap.EOF
+            If RawText = Trim(Nz(rsMap!誤_用途大区分, "")) Then
                 RsMain.Edit
-                RsMain!s用途大区分 = Trim(Nz(RsMap!正_用途大区分, ""))
-                RsMain!s用途大区分名 = Trim(Nz(RsMap!正_用途大区分名, ""))
+                RsMain!s用途大区分 = Trim(Nz(rsMap!正_用途大区分, ""))
+                RsMain!s用途大区分名 = Trim(Nz(rsMap!正_用途大区分名, ""))
                 RsMain.Update
                 Exit Do
             End If
-            RsMap.MoveNext
+            rsMap.MoveNext
         Loop
         RsMain.MoveNext
     Loop
@@ -62,20 +62,20 @@ Public Sub Process_Category_And_Price(ByRef ErrorLog As com_clsErrorUtility)
 
     ' Phase 4: 金額区分
     Set RsMain = DbObj.OpenRecordset(AT_ICUBE, dbOpenDynaset)
-    Set RsMap = DbObj.OpenRecordset(AT_PRICE_CATEGORY_MAP, dbOpenSnapshot)
+    Set rsMap = DbObj.OpenRecordset(AT_PRICE_CATEGORY_MAP, dbOpenSnapshot)
     Do While Not RsMain.EOF
         ProjectPrice = CCur(Nz(RsMain!工事価格, 0))
-        RsMap.MoveFirst
-        Do While Not RsMap.EOF
-            If ProjectPrice >= CCur(Nz(RsMap!最小金額, 0)) And ProjectPrice <= CCur(Nz(RsMap!最大金額, 0)) Then
+        rsMap.MoveFirst
+        Do While Not rsMap.EOF
+            If ProjectPrice >= CCur(Nz(rsMap!最小金額, 0)) And ProjectPrice <= CCur(Nz(rsMap!最大金額, 0)) Then
                 RsMain.Edit
-                RsMain!工事金額区分コード = RsMap!工事金額区分コード
-                RsMain!工事金額区分名 = RsMap!工事金額区分名
-                RsMain!工事金額マイナス判定 = RsMap!工事金額マイナス判定
+                RsMain!工事金額区分コード = rsMap!工事金額区分コード
+                RsMain!工事金額区分名 = rsMap!工事金額区分名
+                RsMain!工事金額マイナス判定 = rsMap!工事金額マイナス判定
                 RsMain.Update
                 Exit Do
             End If
-            RsMap.MoveNext
+            rsMap.MoveNext
         Loop
         RsMain.MoveNext
     Loop

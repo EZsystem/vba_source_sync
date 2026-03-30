@@ -74,14 +74,14 @@ End Sub
 ' 機能 : 蓄積されたログを改行区切りで返す。
 '===========================================================
 Public Function Get_Summary() As String
-    If pErrorLogs.Count = 0 Then
+    If pErrorLogs.count = 0 Then
         Get_Summary = "No errors or notifications logged."
         Exit Function
     End If
     
     Dim i As Long
     Dim summary As String
-    For i = 1 To pErrorLogs.Count
+    For i = 1 To pErrorLogs.count
         summary = summary & pErrorLogs(i) & vbCrLf
     Next i
     Get_Summary = summary
@@ -92,7 +92,7 @@ End Function
 ' 機能 : 蓄積されたログがあれば最後に一括で表示する。
 '===========================================================
 Public Sub Show_Final_Report()
-    If pErrorLogs.Count > 0 And pIsBatchActive = 1 Then
+    If pErrorLogs.count > 0 And pIsBatchActive = 1 Then
         MsgBox "バッチ処理中に以下の通知が発生しました：" & vbCrLf & vbCrLf & Get_Summary(), _
                vbInformation, "処理完了レポート"
     End If

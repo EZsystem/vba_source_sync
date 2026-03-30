@@ -131,12 +131,19 @@ End Function
 ' 概要 : 枝番工事コードを検索軸として、テレコになった属性情報を
 '        レコード単位で完全に差し替える（スワップ・ロジック）
 '----------------------------------------------------------------
-Private Sub Apply_Manual_Final_Correction(ByRef clsLog As com_clsErrorUtility)
+Public Sub Apply_Manual_Final_Correction(Optional ByRef clsLog As com_clsErrorUtility = Nothing)
     Dim db As DAO.Database: Set db = CurrentDb
     Dim strSQL As String
     Const TEMP_TABLE As String = "at_Temp_Genka_Correction_Work"
+    Dim bLocalLog As Boolean
 
     On Error GoTo Err_Sub
+    
+    If clsLog Is Nothing Then
+        Set clsLog = New com_clsErrorUtility
+        clsLog.Init isBatch:=True
+        bLocalLog = True
+    End If
 
     ' 1. 作業用テーブルのクリーンアップ（存在すれば削除）
     On Error Resume Next
@@ -180,6 +187,8 @@ Private Sub Apply_Manual_Final_Correction(ByRef clsLog As com_clsErrorUtility)
 Err_Sub:
     clsLog.Notify_Smart_Popup "Apply_Manual_Final_Correction Error: " & Err.Description
 End Sub
+
+
 
 
 

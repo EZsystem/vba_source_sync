@@ -33,18 +33,18 @@ Private Sub SimpleCleanStandalone(ByVal pattern As String)
     Next mdl
 
     ' 2. リストをもとに削除実行
-    If targetNames.Count = 0 Then
+    If targetNames.count = 0 Then
         MsgBox "対象が見つかりませんでした: " & pattern
         Exit Sub
     End If
 
-    For i = 1 To targetNames.Count
+    For i = 1 To targetNames.count
         DoCmd.Close acModule, targetNames(i), acSaveNo
         DoCmd.DeleteObject acModule, targetNames(i)
         Debug.Print "削除成功: " & targetNames(i)
     Next i
 
-    MsgBox targetNames.Count & " 個のモジュールを削除しました。"
+    MsgBox targetNames.count & " 個のモジュールを削除しました。"
 End Sub
 
 
@@ -102,15 +102,15 @@ Public Sub CleanModulesByPattern(ByVal pattern As String)
     Next mdl
 
     ' 2. 一括削除の実行
-    If moduleNames.Count = 0 Then
+    If moduleNames.count = 0 Then
         Debug.Print "No modules found matching pattern: " & pattern
         Exit Sub
     End If
 
-    For i = 1 To moduleNames.Count
+    For i = 1 To moduleNames.count
         DeleteModuleStandalone moduleNames.Item(i)
     Next i
     
-    MsgBox moduleNames.Count & " items deleted.", vbInformation
+    MsgBox moduleNames.count & " items deleted.", vbInformation
 End Sub
 

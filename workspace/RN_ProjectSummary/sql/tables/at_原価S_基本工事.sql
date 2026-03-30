@@ -16,7 +16,7 @@ CREATE TABLE [at_原価S_基本工事] (
     [今後支払予定] CURRENCY,
     [当月より前の支払金額] CURRENCY,
     [当月支払金額] CURRENCY,
-    [設計料・他] TEXT,
+    [設計料・他] CURRENCY,
     [当月以降予定金額] CURRENCY,
     [行分類] TEXT
 );

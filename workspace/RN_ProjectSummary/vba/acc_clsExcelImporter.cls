@@ -14,7 +14,7 @@ Private pConn         As Object ' DAO.Database を保持
 Private pMapping      As Object ' Dictionary (Excelタイトル -> Accessフィールド名)
 
 ' --- 呼び出し側から渡される設定値 (実数は持たない) ---
-Public TableName      As String
+Public tableName      As String
 Public HeaderRow      As Long   ' タイトル行 (5など)
 Public StartColumn    As Long   ' 開始列 (B列なら2など)
 Public EndColumn      As Long   ' 終了列 (EK列なら141など)
@@ -46,7 +46,7 @@ Public Sub ImportFromWorksheet(ByVal wS As Object)
     Dim rsTemp      As DAO.Recordset
     
     ' 1. Excelを配列に一括読込 (プロパティで指定された範囲を使用)
-    lastRow = wS.Cells(wS.Rows.Count, StartColumn).End(-4162).Row ' -4162 = xlUp
+    lastRow = wS.Cells(wS.Rows.count, StartColumn).End(-4162).Row ' -4162 = xlUp
     dataArr = wS.Range(wS.Cells(HeaderRow, StartColumn), wS.Cells(lastRow, EndColumn)).Value
     
     ' 2. 配列1行目(タイトル)を物理的に翻訳(置換)
@@ -63,7 +63,7 @@ Public Sub ImportFromWorksheet(ByVal wS As Object)
     Next c
     
     ' 3. テーブルへの流し込み
-    Set rsTemp = pConn.OpenRecordset(TableName, 2) ' 2 = dbOpenDynaset
+    Set rsTemp = pConn.OpenRecordset(tableName, 2) ' 2 = dbOpenDynaset
     
     For r = 2 To UBound(dataArr, 1) ' 2行目からデータ開始
         rsTemp.AddNew
