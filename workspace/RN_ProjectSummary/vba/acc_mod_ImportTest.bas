@@ -3,12 +3,7 @@
 Option Compare Database
 Option Explicit
 
-' 転写関連のテーブル名を一元管理(定数宣言)
-Private Const TBL_RAW_IMPORT As String = "at_Test_Raw_Import"
-Private Const TBL_SETTING_COM As String = "at_原価S_ColSettingCom"
-Private Const TBL_SETTING_VAR As String = "at_原価S_ColSettingVar"
-Private Const TBL_KIHON As String = "at_原価S_基本工事"
-Private Const TBL_EDABAN As String = "at_原価S_枝番工事"
+
 
 '============================================
 ' プロシージャ名 : Execute_All_Genka_Process
@@ -36,8 +31,8 @@ Public Sub Execute_All_Genka_Process()
     Call Apply_Manual_Final_Correction
     
     ' ---- [追加] Icube累計とのデータ検証処理を呼び出し ----
-    'Debug.Print "=== Icubeデータとの枝番工事の検証を実行します ==="
-    'Call Validate_Edaban_Against_Icube
+    Debug.Print "=== Icubeデータとの枝番工事の検証を実行します ==="
+    Call Validate_Edaban_Against_Icube
     
     MsgBox "すべての転写処理が正常に完了しました。", vbInformation
 End Sub
@@ -84,17 +79,17 @@ Public Function Import_Genka_Raw_Test() As Boolean
         Exit Function
     End If
     
-    ' 2. テストテーブルを空にする
-    db.Execute "DELETE FROM [at_Test_Raw_Import]", dbFailOnError
+    ' 2. インポート用一時テーブルを空にする
+    db.Execute "DELETE FROM [" & AT_GENKA_IMPORT_WORK & "]", dbFailOnError
     
     ' 3. 動的に範囲指定文字列を作成してインポート
     importRange = "原価S直データ!A7:AT" & lastRow
     
     DoCmd.TransferSpreadsheet acImport, acSpreadsheetTypeExcel12, _
-        "at_Test_Raw_Import", xlPath, False, importRange
+        AT_GENKA_IMPORT_WORK, xlPath, False, importRange
         
     Debug.Print "--- インポート完了 ---"
-    Debug.Print "テーブル [at_Test_Raw_Import] に " & (lastRow - 6) & " 行取り込みました。"
+    Debug.Print "テーブル [" & AT_GENKA_IMPORT_WORK & "] に " & (lastRow - 6) & " 行取り込みました。"
     Import_Genka_Raw_Test = True
 
 Exit_Sub:
@@ -156,12 +151,12 @@ Public Function Update_Genka_MainTables_FromTemp() As Boolean
     Set db = CurrentDb
     
     ' 2. 本テーブルのフィールド構造を「実在チェックリスト」として辞書に格納
-    Set tdfKihon = db.TableDefs(TBL_KIHON)
+    Set tdfKihon = db.TableDefs(AT_GENKA_BASIC)
     For Each fld In tdfKihon.Fields
         fieldNamesKihon(fld.Name) = True
     Next fld
     
-    Set tdfEdaban = db.TableDefs(TBL_EDABAN)
+    Set tdfEdaban = db.TableDefs(AT_GENKA_BRANCH)
     For Each fld In tdfEdaban.Fields
         fieldNamesEdaban(fld.Name) = True
     Next fld
@@ -172,7 +167,7 @@ Public Function Update_Genka_MainTables_FromTemp() As Boolean
     
     ' 2. マッピングの読み込み (共通テーブル: at_原価S_ColSettingCom)
     Debug.Print "=== マッピング(共通)を読み込みます ==="
-    Set rsMapCom = db.OpenRecordset("SELECT * FROM [" & TBL_SETTING_COM & "]", dbOpenSnapshot)
+    Set rsMapCom = db.OpenRecordset("SELECT * FROM [" & AT_GENKA_SETTING_COM & "]", dbOpenSnapshot)
     
     ' 列名を動的に探す(タイポ対策)
     Dim colComMoto As String, colComSaki As String, colComType As String
@@ -197,7 +192,7 @@ Public Function Update_Genka_MainTables_FromTemp() As Boolean
     
     ' 3. マッピングの読み込み (変数テーブル: at_原価S_ColSettingVar)
     Debug.Print "=== マッピング(変数)を読み込みます ==="
-    Set rsMapVar = db.OpenRecordset("SELECT * FROM [" & TBL_SETTING_VAR & "]", dbOpenSnapshot)
+    Set rsMapVar = db.OpenRecordset("SELECT * FROM [" & AT_GENKA_SETTING_VAR & "]", dbOpenSnapshot)
     
     ' 列名を動的に探す(タイポ対策)
     Dim colVarMoto As String, colVarSaki As String, colVarType As String
@@ -222,17 +217,17 @@ Public Function Update_Genka_MainTables_FromTemp() As Boolean
     
     ' 5. 【追加】転写前に対象の本番テーブルをクリアする
     Debug.Print "=== 転写先のテーブルデータをクリアします ==="
-    db.Execute "DELETE FROM [" & TBL_KIHON & "]", dbFailOnError
-    db.Execute "DELETE FROM [" & TBL_EDABAN & "]", dbFailOnError
+    db.Execute "DELETE FROM [" & AT_GENKA_BASIC & "]", dbFailOnError
+    db.Execute "DELETE FROM [" & AT_GENKA_BRANCH & "]", dbFailOnError
     
-    Set rsKihon = db.OpenRecordset(TBL_KIHON, dbOpenDynaset)
-    Set rsEdaban = db.OpenRecordset(TBL_EDABAN, dbOpenDynaset)
+    Set rsKihon = db.OpenRecordset(AT_GENKA_BASIC, dbOpenDynaset)
+    Set rsEdaban = db.OpenRecordset(AT_GENKA_BRANCH, dbOpenDynaset)
     
     Dim insertKihonCount As Long, updateKihonCount As Long, insertEdabanCount As Long
     insertKihonCount = 0: updateKihonCount = 0: insertEdabanCount = 0
     
     ' 6. 仮テーブルのループ処理
-    Set rsIn = db.OpenRecordset("SELECT * FROM [" & TBL_RAW_IMPORT & "]", dbOpenSnapshot)
+    Set rsIn = db.OpenRecordset("SELECT * FROM [" & AT_GENKA_IMPORT_WORK & "]", dbOpenSnapshot)
     Debug.Print "=== マッピングと実在チェックに基づく新しい安全なデータ転写処理(DAO方式)を開始します ==="
     
     Do Until rsIn.EOF
@@ -423,7 +418,7 @@ Public Sub Debug_Print_KihonName_Test()
     
     Set db = CurrentDb
     ' F1='1' の行を取得
-    Set rsIn = db.OpenRecordset("SELECT * FROM [at_Test_Raw_Import] WHERE Nz(F1, '') = '1'")
+    Set rsIn = db.OpenRecordset("SELECT * FROM [" & AT_GENKA_IMPORT_WORK & "] WHERE Nz(F1, '') = '1'")
     
     Debug.Print "=== 調査開始：F1=1 の基本工事名取得テスト ==="
     
@@ -575,7 +570,7 @@ End Sub
 
 '============================================
 ' プロシージャ名 : Validate_Edaban_Against_Icube
-' 概要          : 枝番工事テーブルの「枝番工事コード＋追加工事名称」が
+' 概要          : 枝番工事テーブルの「枝番工事コード＋工事価格」が
 '               at_Icube_累計 に存在するかを検証する。存在しない場合は
 '               枝番工事コードerr フィールドにエラー文言を書き込む
 '============================================
@@ -587,10 +582,10 @@ Public Sub Validate_Edaban_Against_Icube()
     Set db = CurrentDb
     
     ' LEFT JOIN を用いて、at_Icube_累計 に一致するレコードが無い at_原価S_枝番工事 の行を抽出して UPDATE
-    sql = "UPDATE [" & TBL_EDABAN & "] AS E " & _
+    sql = "UPDATE [" & AT_GENKA_BRANCH & "] AS E " & _
           "LEFT JOIN [at_Icube_累計] AS I " & _
-          "ON (E.[枝番工事コード] & E.[追加工事名称]) = " & _
-          "(I.[枝番工事コード] & I.[追加工事名称]) " & _
+          "ON (E.[枝番工事コード] & E.[工事価格]) = " & _
+          "(I.[枝番工事コード] & I.[工事価格]) " & _
           "SET E.[枝番工事コードerr] = 'Icubeと枝番工事コード不一致' " & _
           "WHERE I.[枝番工事コード] Is Null;"
           
@@ -606,5 +601,7 @@ Err_Handler:
     Debug.Print "Icube検証エラー (" & Err.Number & "): " & Err.Description
     Resume Exit_Sub
 End Sub
+
+
 
 

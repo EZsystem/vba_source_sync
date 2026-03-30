@@ -7,6 +7,15 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'VERSION 1.0 CLASS
+'BEGIN
+'  MultiUse = -1  'True
+'End
+'Attribute VB_Name = "acc_clsDataCleaner"
+'Attribute VB_GlobalNameSpace = False
+'Attribute VB_Creatable = False
+'Attribute VB_PredeclaredId = False
+'Attribute VB_Exposed = False
 '===========================================================
 
 ' Class Module: acc_clsDataCleaner
@@ -26,27 +35,25 @@ Option Explicit
 
 
 ' --- 内部保持変数 ---
-
 Private pSanitizer As acc_clsTextSanitizer
-
 Private pDateMath  As com_clsDateMath
 
-
-
 '===========================================================
-
-' サブルーチン名 : Init
-
-' 機能 : 内部ユーティリティクラスを初期化する。
-
+' サブルーチン名 : Class_Initialize
+' 機能 : クラスの生成時に内部ユーティリティを自動初期化する。
 '===========================================================
-
-Public Sub Init()
-
+Private Sub Class_Initialize()
     Set pSanitizer = New acc_clsTextSanitizer
-
     Set pDateMath = New com_clsDateMath
+End Sub
 
+'===========================================================
+' サブルーチン名 : Init
+' 機能 : 内部ユーティリティクラスを初期化する（互換用）。
+'===========================================================
+Public Sub Init()
+    If pSanitizer Is Nothing Then Set pSanitizer = New acc_clsTextSanitizer
+    If pDateMath Is Nothing Then Set pDateMath = New com_clsDateMath
 End Sub
 
 
@@ -239,24 +246,68 @@ Public Function GetSupportedVBAType(ByVal jpType As String) As String
 
     Dim t As String: t = Trim(jpType)
 
-    Select Case t
-
-        Case "テキスト型", "メモ型": GetSupportedVBAType = "String"
-
-        Case "長整数型", "オートナンバー型": GetSupportedVBAType = "Long"
-
-        Case "整数型": GetSupportedVBAType = "Integer"
-
-        Case "倍精度浮動小数点型", "数値型", "倍精度型": GetSupportedVBAType = "Double"
-
-        Case "通貨型": GetSupportedVBAType = "Currency"
-
-        Case "日付/時刻型", "日付型": GetSupportedVBAType = "Date"
-
-        Case "Yes/No型": GetSupportedVBAType = "Boolean"
-
-        Case Else: GetSupportedVBAType = "Variant"
-
     End Select
 
 End Function
+
+'===========================================================
+' --- 以下、acc_clsDataCleaner_Test から統合された新ロジック ---
+'===========================================================
+
+'----------------------------------------------------------------
+' 関数名 : TextToCurrency
+' 概要   : 通貨型への変換。Debug.Print によるログ出力付き。
+'----------------------------------------------------------------
+Public Function TextToCurrency(ByVal val As Variant, Optional ByVal defaultValue As Currency = 0) As Currency
+    Dim result As Currency
+    If IsNull(val) Or Not IsNumeric(val) Then
+        result = defaultValue
+    Else
+        On Error Resume Next
+        result = CCur(val)
+        If Err.Number <> 0 Then result = defaultValue
+    End If
+    ' イミディエイトウィンドウへログを出力
+    Debug.Print "      [Cleanup] Currency化: [" & val & "] -> " & result
+    TextToCurrency = result
+End Function
+
+'----------------------------------------------------------------
+' 関数名 : TextToDouble
+' 概要   : 数値（Double）への変換。
+'----------------------------------------------------------------
+Public Function TextToDouble(ByVal val As Variant, Optional ByVal defaultValue As Double = 0) As Double
+    Dim result As Double
+    If IsNull(val) Or Not IsNumeric(val) Then
+        result = defaultValue
+    Else
+        On Error Resume Next
+        result = CDbl(val)
+        If Err.Number <> 0 Then result = defaultValue
+    End If
+    TextToDouble = result
+End Function
+
+'----------------------------------------------------------------
+' 関数名 : TextToDate
+' 概要   : 日付への変換。Debug.Print によるログ出力付き。
+'----------------------------------------------------------------
+Public Function TextToDate(ByVal val As Variant, Optional ByVal defaultDate As Date = #1/1/1900#) As Date
+    Dim result As Date
+    If IsNull(val) Or val = "" Then
+        result = defaultDate
+    ElseIf IsDate(val) Then
+        result = CDate(val)
+    Else
+        ' 8桁/6桁数字形式の解析を試行
+        pDateMath.RawValue = CStr(val)
+        If pDateMath.IsValid Then
+            result = DateSerial(pDateMath.Year, pDateMath.Month, pDateMath.Day)
+        Else
+            result = defaultDate
+        End If
+    End If
+    Debug.Print "      [Cleanup] Date化: [" & val & "] -> " & result
+    TextToDate = result
+End Function
+

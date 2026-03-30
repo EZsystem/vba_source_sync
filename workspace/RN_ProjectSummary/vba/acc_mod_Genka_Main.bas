@@ -1,194 +1,342 @@
 ﻿Attribute VB_Name = "acc_mod_Genka_Main"
 'Attribute VB_Name = "acc_mod_Genka_Main"
 '----------------------------------------------------------------
-' サブルーチン名 : Import_GenkaData_ToMain
-' 概要 : 原価データのインポート・転送、および各種補正（自動・手動）を一括実行する
+' Module: acc_mod_Genka_Main
+' 説明   : 原価管理システムにおけるExcelインポート、マッピング転写および検証のメインロジック。
+' 更新日 : 2026/03/30
 '----------------------------------------------------------------
 Option Compare Database
 Option Explicit
 
-'----------------------------------------------------------------
-' サブルーチン名 : Import_GenkaData_ToMain
-'----------------------------------------------------------------
-Public Sub Import_GenkaData_ToMain()
-    Dim clsLog      As com_clsErrorUtility
-    Dim clsTransfer As acc_clsTableTransfer
-    Dim dictBasic   As Object
-    Dim dictBranch  As Object
-    Dim db          As DAO.Database: Set db = CurrentDb
-    
-    Set clsLog = New com_clsErrorUtility
-    clsLog.Init isBatch:=True
-    
-    Set clsTransfer = New acc_clsTableTransfer
-    clsTransfer.Init db
-    
-    On Error GoTo Err_Handler
-    
-    Const TBL_SETTING As String = "at_原価S_ColSetting2"
-    
-    ' 1. マッピングルールの取得 (Test2/Test3で別々の辞書を作る)
-    Set dictBasic = Get_GenkaRuleDictionary(TBL_SETTING, "基本工事_本テーブルタイトル名", "基本工事_データ型")
-    Set dictBranch = Get_GenkaRuleDictionary(TBL_SETTING, "枝番工事_本テーブルタイトル名", "枝番工事_データ型")
-    
-    ' 2. テスト用テーブルの本番列名マッピングクエリ（仮想ビュー）を動的作成
-    Const QRY_TEST2 As String = "qry_Genka_Map_Test2"
-    Const QRY_TEST3 As String = "qry_Genka_Map_Test3"
-    Call Create_Mapped_Query("at_Test2_Raw_Import", QRY_TEST2, TBL_SETTING, "基本工事_仮テーブルタイトル名", "基本工事_本テーブルタイトル名")
-    Call Create_Mapped_Query("at_Test3_Raw_Import", QRY_TEST3, TBL_SETTING, "枝番工事_仮テーブルタイトル名", "枝番工事_本テーブルタイトル名")
-    
-    ' --- A. 基本工事の転送 ---
-    db.Execute "DELETE * FROM [" & AT_GENKA_BASIC & "]", dbFailOnError
-    ' Test2テーブルはすべて基本工事のデータのため、抽出条件は不要（行分類列もないため空文字を指定します）
-    clsTransfer.ExecuteTransferWithRules QRY_TEST2, AT_GENKA_BASIC, dictBasic, ""
-    
-    ' --- B. 枝番工事の転送 ---
-    db.Execute "DELETE * FROM [" & AT_GENKA_BRANCH & "]", dbFailOnError
-    ' 枝番テーブルもTest3ですでに抽出済みのため、条件を外して全件取り込みます
-    clsTransfer.ExecuteTransferWithRules QRY_TEST3, AT_GENKA_BRANCH, dictBranch, ""
-    
-    ' --- C. 手動最終補正の実行 (枝番工事コードを軸に属性差し替え) ---
-    Call Apply_Manual_Final_Correction(clsLog)
-    
-    ' 後片付け (仮想クエリの削除)
-    On Error Resume Next
-    db.QueryDefs.Delete QRY_TEST2
-    db.QueryDefs.Delete QRY_TEST3
-    On Error GoTo Err_Handler
-    
-    clsLog.Notify_Smart_Popup "工事原価データの転記および最終補正が完了しました。"
-    Exit Sub
-
-Err_Handler:
-    clsLog.Notify_Smart_Popup "Import_GenkaData Error: " & Err.Description
-End Sub
+'===========================================================
+' 1. メイン・ワークフロー (Public Procedures)
+'===========================================================
 
 '----------------------------------------------------------------
-' サブルーチン名 : Create_Mapped_Query
-' 概要 : 設定テーブル上の [仮テーブルタイトル名(F1等)] と [本テーブルタイトル名] のペアから仮想クエリを生成する
+' プロシージャ名 : Run_Genka_Import_Workflow
+' 概要          : Excelインポートから本番テーブル転写、補正までの全工程を一括実行
 '----------------------------------------------------------------
-Private Sub Create_Mapped_Query(ByVal sourceTable As String, ByVal queryName As String, ByVal tblSetting As String, ByVal colTempName As String, ByVal colMainName As String)
-    Dim db As DAO.Database: Set db = CurrentDb
-    Dim rs As DAO.Recordset
-    Dim qdf As DAO.QueryDef
-    Dim strSelect As String
-    Dim strSQL As String
+Public Sub Run_Genka_Import_Workflow()
+    Debug.Print "--- 工事原価インポート・ワークフローを開始します ---"
     
-    ' 列設定情報を読み込み SELECT リストを生成
-    Set rs = db.OpenRecordset("SELECT * FROM [" & tblSetting & "]", dbOpenSnapshot)
-    Do Until rs.EOF
-        ' 本テーブルタイトル名（転送先列名）に文字が入っていればマッピング対象
-        If Not IsNull(rs(colTempName).Value) And Not IsNull(rs(colMainName).Value) Then
-            If Trim(rs(colTempName).Value & "") <> "" And Trim(rs(colMainName).Value & "") <> "" Then
-                ' 例: [F1] AS [基本工事コード]
-                strSelect = strSelect & "[" & rs(colTempName).Value & "] AS [" & rs(colMainName).Value & "], "
-            End If
-        End If
-        rs.MoveNext
-    Loop
-    rs.Close
-    
-    If Len(strSelect) > 0 Then
-        strSelect = Left(strSelect, Len(strSelect) - 2)
-    Else
+    ' 1. Excelファイルのデータ取り込み (A7以降)
+    If Not Import_Excel_To_Temp() Then
+        MsgBox "Excelインポート処理でエラーが発生したため、中断します。", vbCritical
         Exit Sub
     End If
     
-    strSQL = "SELECT " & strSelect & " FROM [" & sourceTable & "];"
+    ' 2. 仮テーブルから本番テーブルへの動的マッピング転写
+    Debug.Print "=== 本番テーブルへのデータ転写（DAO/Dynamic Mapping）を開始します ==="
+    If Not Transfer_Temp_To_Production() Then
+        MsgBox "本番テーブルへの転写処理中にエラーが発生しました。", vbCritical
+        Exit Sub
+    End If
     
-    ' 既存のクエリがある場合は削除
-    On Error Resume Next
-    db.QueryDefs.Delete queryName
-    On Error GoTo 0
+    ' 3. 手動最終補正処理 (枝番コードを軸にした属性修正)
+    Debug.Print "=== 手動最終補正処理(Apply_Manual_Final_Correction)を実行します ==="
+    Call Apply_Manual_Final_Correction
     
-    ' 仮想クエリ(View)の作成
-    Set qdf = db.CreateQueryDef(queryName, strSQL)
+    ' 4. Icube累計との整合性検証
+    Debug.Print "=== Icube累計とのデータ検証を実行します ==="
+    Call Validate_Branch_Against_Icube_Accumulated
+    
+    MsgBox "すべてのインポート・転写工程が正常に完了しました。", vbInformation
 End Sub
 
+'===========================================================
+' 2. 工程別内部処理 (Private Procedures)
+'===========================================================
 
-' --- ルール辞書の生成 (列名を現状のテーブル構造に合わせる) ---
-Private Function Get_GenkaRuleDictionary(ByVal tblName As String, ByVal colMainName As String, ByVal colTypeName As String) As Object
-    Dim rs As DAO.Recordset
-    Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
+'----------------------------------------------------------------
+' 内部関数 : Import_Excel_To_Temp
+' 概要    : Excelファイルから指定範囲を一時テーブルへインポート
+'----------------------------------------------------------------
+Private Function Import_Excel_To_Temp() As Boolean
+    Import_Excel_To_Temp = False
+    Dim db As DAO.Database: Set db = CurrentDb
+    Dim xlPath As String
+    Dim xlApp As Object, xlBook As Object, xlSheet As Object
+    Dim lastRow As Long, importRange As String
     
-    Set rs = CurrentDb.OpenRecordset("SELECT * FROM [" & tblName & "]", dbOpenSnapshot)
-    Do Until rs.EOF
-        If Not IsNull(rs(colMainName).Value) Then
-            If Trim(rs(colMainName).Value & "") <> "" Then
-                ' 空欄対応モードは削られたため、一律でNullを渡す
-                dict(rs(colMainName).Value) = Array(rs(colTypeName).Value, Null)
+    On Error GoTo Err_Handler
+    
+    xlPath = "D:\My_code\11_workspaces\RN_kanri_system\genka_system\原価システムimport.xlsm"
+    
+    ' Excelプロセスを起動して最終行を確認 (xlUp = -4162)
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+    Set xlBook = xlApp.Workbooks.Open(xlPath, ReadOnly:=True)
+    Set xlSheet = xlBook.Sheets("原価S直データ")
+    
+    lastRow = xlSheet.Cells(xlSheet.Rows.count, 1).End(-4162).Row
+    xlBook.Close False
+    xlApp.Quit
+    
+    If lastRow < 7 Then
+        Debug.Print "A7行以降にデータが存在しません。"
+        Exit Function
+    End If
+    
+    ' インポート先ワークテーブルをクリア
+    db.Execute "DELETE FROM [" & AT_GENKA_IMPORT_WORK & "]", dbFailOnError
+    
+    ' A7:AT(最終行)を取得
+    importRange = "原価S直データ!A7:AT" & lastRow
+    DoCmd.TransferSpreadsheet acImport, acSpreadsheetTypeExcel12, _
+        AT_GENKA_IMPORT_WORK, xlPath, False, importRange
+        
+    Debug.Print "  -> インポート完了 (レコード数: " & (lastRow - 6) & ")"
+    Import_Excel_To_Temp = True
+
+Exit_Sub:
+    Set xlSheet = Nothing: Set xlBook = Nothing: Set xlApp = Nothing
+    Exit Function
+Err_Handler:
+    Debug.Print "Import_Excel_To_Temp Error: " & Err.Description
+    Import_Excel_To_Temp = False: Resume Exit_Sub
+End Function
+
+'----------------------------------------------------------------
+' 内部関数 : Transfer_Temp_To_Production
+' 概要    : マッピング設定に基づきDAO経由で本番テーブルへ転送
+'----------------------------------------------------------------
+Private Function Transfer_Temp_To_Production() As Boolean
+    Transfer_Temp_To_Production = False
+    Dim db As DAO.Database: Set db = CurrentDb
+    Dim rsMapCom As DAO.Recordset, rsMapVar As DAO.Recordset, rsIn As DAO.Recordset
+    Dim rsKihon As DAO.Recordset, rsEdaban As DAO.Recordset
+    Dim dictMap As Object: Set dictMap = CreateObject("Scripting.Dictionary")
+    
+    ' 本番テーブルのフィールド存在確認用辞書
+    Dim validKihon As Object: Set validKihon = CreateObject("Scripting.Dictionary")
+    Dim validEdaban As Object: Set validEdaban = CreateObject("Scripting.Dictionary")
+    Dim fld As DAO.Field
+    
+    On Error GoTo Err_Handler
+    
+    ' 実在チェックリスト作成
+    For Each fld In db.TableDefs(AT_GENKA_BASIC).Fields: validKihon(fld.Name) = True: Next
+    For Each fld In db.TableDefs(AT_GENKA_BRANCH).Fields: validEdaban(fld.Name) = True: Next
+    
+    ' マッピング読み込み (共通)
+    Set rsMapCom = db.OpenRecordset(AT_GENKA_SETTING_COM, dbOpenSnapshot)
+    Call Load_Mapping_To_Dict(rsMapCom, dictMap)
+    rsMapCom.Close
+    
+    ' マッピング読み込み (変数)
+    Set rsMapVar = db.OpenRecordset(AT_GENKA_SETTING_VAR, dbOpenSnapshot)
+    Call Load_Mapping_To_Dict(rsMapVar, dictMap)
+    rsMapVar.Close
+    
+    ' 転写先クリア
+    db.Execute "DELETE FROM [" & AT_GENKA_BASIC & "]", dbFailOnError
+    db.Execute "DELETE FROM [" & AT_GENKA_BRANCH & "]", dbFailOnError
+    
+    Set rsKihon = db.OpenRecordset(AT_GENKA_BASIC, dbOpenDynaset)
+    Set rsEdaban = db.OpenRecordset(AT_GENKA_BRANCH, dbOpenDynaset)
+    Set rsIn = db.OpenRecordset(AT_GENKA_IMPORT_WORK, dbOpenSnapshot)
+    
+    ' 作業変数
+    Dim v_K1 As String, v_K2 As String, v_K3 As String, v_K4 As String, v_K5 As String, v_K6 As String
+    Dim f1_val As String, f2_val As String, f3_val As String
+    Dim spacePos As Integer
+    Dim countInsK As Long, countUpdK As Long, countInsE As Long
+    
+    v_K1 = "": v_K2 = "": v_K3 = "": v_K4 = "": v_K5 = "": v_K6 = ""
+    
+    Do Until rsIn.EOF
+        f1_val = Trim(Nz(rsIn!f1, ""))
+        If f1_val = "" Then GoTo NextRow
+        
+        If f1_val = "1" Then
+            f3_val = Format_Genka_String(Nz(rsIn!f3, ""))
+            spacePos = InStr(f3_val, " ")
+            v_K1 = IIf(spacePos > 0, Left(f3_val, spacePos - 1), f3_val)
+            v_K2 = IIf(spacePos > 0, Mid(f3_val, spacePos + 1), "")
+            
+            rsKihon.AddNew
+            Call Apply_Field_Mapping_Logic(rsKihon, dictMap, validKihon, rsIn, v_K1, v_K2, v_K3, v_K4, v_K5, v_K6)
+            rsKihon.Update
+            countInsK = countInsK + 1
+            
+        ElseIf f1_val = "2" Or f1_val = "3" Then
+            rsKihon.FindFirst "[基本工事コード] = '" & Replace(v_K1, "'", "''") & "'"
+            If Not rsKihon.NoMatch Then
+                rsKihon.Edit
+                Call Apply_Field_Mapping_Logic(rsKihon, dictMap, validKihon, rsIn, v_K1, v_K2, v_K3, v_K4, v_K5, v_K6)
+                rsKihon.Update
+                countUpdK = countUpdK + 1
             End If
+            
+        ElseIf f1_val = "4" Then
+            f3_val = Format_Genka_String(Nz(rsIn!f3, ""))
+            spacePos = InStr(f3_val, " ")
+            v_K3 = IIf(spacePos > 0, Left(f3_val, spacePos - 1), f3_val)
+            v_K4 = IIf(spacePos > 0, Mid(f3_val, spacePos + 1), "")
+            
+        ElseIf val(f1_val) >= 5 Then
+            f2_val = Trim(Nz(rsIn!f2, ""))
+            If f2_val <> "" And f2_val <> "管理番号" Then
+                v_K5 = v_K3 & "‐" & f2_val
+                v_K6 = Trim(Nz(rsIn!f3, ""))
+                
+                rsEdaban.AddNew
+                Call Apply_Field_Mapping_Logic(rsEdaban, dictMap, validEdaban, rsIn, v_K1, v_K2, v_K3, v_K4, v_K5, v_K6)
+                rsEdaban.Update
+                countInsE = countInsE + 1
+            End If
+        End If
+NextRow:
+        rsIn.MoveNext
+    Loop
+    
+    Debug.Print "  基本追加: " & countInsK & " / 基本更新: " & countUpdK & " / 枝番追加: " & countInsE
+    Transfer_Temp_To_Production = True
+
+Exit_Sub:
+    On Error Resume Next
+    rsIn.Close: rsKihon.Close: rsEdaban.Close: db.Close
+    Exit Function
+Err_Handler:
+    Debug.Print "Transfer_Temp_To_Production Error: " & Err.Description
+    Resume Exit_Sub
+End Function
+
+'----------------------------------------------------------------
+' 内部処理 : Apply_Field_Mapping_Logic
+'----------------------------------------------------------------
+Private Sub Apply_Field_Mapping_Logic(rsDest As DAO.Recordset, dictMap As Object, validFields As Object, rsData As DAO.Recordset, _
+                                     v_K1 As String, v_K2 As String, v_K3 As String, _
+                                     v_K4 As String, v_K5 As String, v_K6 As String)
+    Dim key As Variant, param() As String, destField As String, destType As String
+    Dim rawVal As Variant, strVal As String
+    
+    For Each key In dictMap.Keys
+        param = Split(dictMap(key), "|")
+        destField = param(0): destType = param(1)
+        
+        If validFields.Exists(destField) Then
+            rawVal = Null
+            If Left(CStr(key), 1) = "K" Then
+                Select Case CStr(key)
+                    Case "K1": rawVal = v_K1: Case "K2": rawVal = v_K2
+                    Case "K3": rawVal = v_K3: Case "K4": rawVal = v_K4
+                    Case "K5": rawVal = v_K5: Case "K6": rawVal = v_K6
+                End Select
+            Else
+                rawVal = rsData.Fields(CStr(key)).Value
+            End If
+            
+            If Not IsNull(rawVal) Then
+                strVal = Trim(CStr(rawVal))
+                If strVal <> "" Then
+                    If Right(strVal, 1) = "%" Then
+                        strVal = Replace(strVal, "%", "")
+                        If IsNumeric(strVal) Then rsDest.Fields(destField).Value = CDbl(strVal) / 100
+                    Else
+                        If InStr(destType, "通貨") > 0 Or InStr(destType, "倍精度") > 0 Or InStr(destType, "数値") > 0 Then
+                            strVal = Replace(Replace(strVal, ",", ""), "\", "")
+                            If IsNumeric(strVal) Then rsDest.Fields(destField).Value = strVal
+                        Else
+                            rsDest.Fields(destField).Value = strVal
+                        End If
+                    End If
+                End If
+            End If
+        End If
+    Next key
+End Sub
+
+'----------------------------------------------------------------
+' 内部補助 : Load_Mapping_To_Dict
+'----------------------------------------------------------------
+Private Sub Load_Mapping_To_Dict(rs As DAO.Recordset, ByRef dict As Object)
+    Dim fld As DAO.Field, colMoto As String, colSaki As String, colType As String
+    colMoto = "": colSaki = "": colType = ""
+    
+    ' 列名の動的特定
+    For Each fld In rs.Fields
+        If InStr(fld.Name, "元") > 0 Or InStr(fld.Name, "変数") > 0 Then colMoto = fld.Name
+        If InStr(fld.Name, "先") > 0 Or InStr(fld.Name, "タイトル") > 0 Then colSaki = fld.Name
+        If InStr(fld.Name, "型") > 0 Then colType = fld.Name
+    Next fld
+    
+    Do Until rs.EOF
+        If Trim(Nz(rs.Fields(colMoto).Value, "")) <> "" Then
+            dict(Trim(rs.Fields(colMoto).Value)) = Trim(Nz(rs.Fields(colSaki).Value, "")) & "|" & Trim(Nz(rs.Fields(colType).Value, ""))
         End If
         rs.MoveNext
     Loop
-    rs.Close
-    Set Get_GenkaRuleDictionary = dict
-End Function
-
-
-'----------------------------------------------------------------
-' サブルーチン名 : Apply_Manual_Final_Correction
-' 概要 : 枝番工事コードを検索軸として、テレコになった属性情報を
-'        レコード単位で完全に差し替える（スワップ・ロジック）
-'----------------------------------------------------------------
-Public Sub Apply_Manual_Final_Correction(Optional ByRef clsLog As com_clsErrorUtility = Nothing)
-    Dim db As DAO.Database: Set db = CurrentDb
-    Dim strSQL As String
-    Const TEMP_TABLE As String = "at_Temp_Genka_Correction_Work"
-    Dim bLocalLog As Boolean
-
-    On Error GoTo Err_Sub
-    
-    If clsLog Is Nothing Then
-        Set clsLog = New com_clsErrorUtility
-        clsLog.Init isBatch:=True
-        bLocalLog = True
-    End If
-
-    ' 1. 作業用テーブルのクリーンアップ（存在すれば削除）
-    On Error Resume Next
-    db.Execute "DROP TABLE [" & TEMP_TABLE & "]", dbFailOnError
-    On Error GoTo Err_Sub
-
-    ' 2. 【退避】枝番工事コードを軸に、該当レコードの「全属性（30項目以上）」を一時テーブルへ退避
-    ' [枝番工事コード](本テーブル) と [枝番コード](マスタ) でマッチング
-    strSQL = "SELECT B.* INTO [" & TEMP_TABLE & "] " & _
-             "FROM [" & AT_GENKA_BRANCH & "] AS B " & _
-             "INNER JOIN [" & AT_GENKA_MANUAL_FIX & "] AS M " & _
-             "ON B.[枝番工事コード] = M.[枝番コード];"
-    db.Execute strSQL, dbFailOnError
-
-    ' 3. 【属性修正】一時テーブル内の「工事コード」「管理番号」「追加工事名称」をマスタの正解値で上書き
-    ' これにより、名札(枝番)はそのままで、属性の組み合わせだけが正しい状態になる
-    strSQL = "UPDATE [" & TEMP_TABLE & "] AS T " & _
-             "INNER JOIN [" & AT_GENKA_MANUAL_FIX & "] AS M " & _
-             "ON T.[枝番工事コード] = M.[枝番コード] " & _
-             "SET T.[工事コード] = M.[工事コード], " & _
-             "    T.[管理番号] = M.[管理番号], " & _
-             "    T.[追加工事名称] = M.[追加工事名称];"
-    db.Execute strSQL, dbFailOnError
-
-    ' 4. 【本テーブルの削除】差し替え対象となる枝番のレコードを本テーブルから一旦削除
-    strSQL = "DELETE FROM [" & AT_GENKA_BRANCH & "] " & _
-             "WHERE [枝番工事コード] IN (SELECT [枝番コード] FROM [" & AT_GENKA_MANUAL_FIX & "]);"
-    db.Execute strSQL, dbFailOnError
-
-    ' 5. 【復元】属性が正しく整理されたレコードを、一時テーブルから本テーブルへ一括挿入
-    ' SELECT * を使用するため、フィールドが30個あってもパラメータエラーは発生しない
-    strSQL = "INSERT INTO [" & AT_GENKA_BRANCH & "] SELECT * FROM [" & TEMP_TABLE & "];"
-    db.Execute strSQL, dbFailOnError
-
-    ' 6. 後片付け
-    db.Execute "DROP TABLE [" & TEMP_TABLE & "]", dbFailOnError
-    
-    Debug.Print "枝番工事コードを軸としたデータ属性の入れ替えが完了しました。"
-    Exit Sub
-
-Err_Sub:
-    clsLog.Notify_Smart_Popup "Apply_Manual_Final_Correction Error: " & Err.Description
 End Sub
 
+'----------------------------------------------------------------
+' 内部補助 : Format_Genka_String
+'----------------------------------------------------------------
+Private Function Format_Genka_String(ByVal src As String) As String
+    src = Replace(Replace(src, vbTab, " "), "　", " ")
+    Do While InStr(src, "  ") > 0: src = Replace(src, "  ", " "): Loop
+    Format_Genka_String = Trim(src)
+End Function
 
+'===========================================================
+' 3. 検証・補正処理 (Validation & Correction)
+'===========================================================
 
+'----------------------------------------------------------------
+' プロシージャ名 : Apply_Manual_Final_Correction
+' 概要          : 枝番工事コードを検索軸として、属性情報をマスタ正解値で差し替える
+'----------------------------------------------------------------
+Public Sub Apply_Manual_Final_Correction()
+    Dim db As DAO.Database: Set db = CurrentDb
+    Dim strSQL As String
+    Const TEMP_CORR As String = "at_Temp_Genka_Correction_Work"
+
+    On Error GoTo Err_Sub
+    
+    On Error Resume Next: db.Execute "DROP TABLE [" & TEMP_CORR & "]", dbFailOnError: On Error GoTo Err_Sub
+
+    ' 1. 退避
+    strSQL = "SELECT B.* INTO [" & TEMP_CORR & "] " & _
+             "FROM [" & AT_GENKA_BRANCH & "] AS B " & _
+             "INNER JOIN [" & AT_GENKA_MANUAL_FIX & "] AS M ON B.[枝番工事コード] = M.[枝番コード];"
+    db.Execute strSQL, dbFailOnError
+
+    ' 2. 属性修正
+    strSQL = "UPDATE [" & TEMP_CORR & "] AS T " & _
+             "INNER JOIN [" & AT_GENKA_MANUAL_FIX & "] AS M ON T.[枝番工事コード] = M.[枝番コード] " & _
+             "SET T.[工事コード] = M.[工事コード], T.[管理番号] = M.[管理番号], T.[追加工事名称] = M.[追加工事名称];"
+    db.Execute strSQL, dbFailOnError
+
+    ' 3. 本番からの削除と復元
+    db.Execute "DELETE FROM [" & AT_GENKA_BRANCH & "] WHERE [枝番工事コード] IN (SELECT [枝番コード] FROM [" & AT_GENKA_MANUAL_FIX & "]);", dbFailOnError
+    db.Execute "INSERT INTO [" & AT_GENKA_BRANCH & "] SELECT * FROM [" & TEMP_CORR & "];", dbFailOnError
+
+    db.Execute "DROP TABLE [" & TEMP_CORR & "]", dbFailOnError
+    Debug.Print "  -> 手動最終補正完了"
+    Exit Sub
+Err_Sub:
+    Debug.Print "Apply_Manual_Final_Correction Error: " & Err.Description
+End Sub
+
+'----------------------------------------------------------------
+' プロシージャ名 : Validate_Branch_Against_Icube_Accumulated
+' 概要          : 枝番工事+工事価格のペアが Icube累計に存在するか検証し、エラーを記録
+'----------------------------------------------------------------
+Public Sub Validate_Branch_Against_Icube_Accumulated()
+    Dim db As DAO.Database: Set db = CurrentDb
+    Dim sql As String
+    On Error GoTo Err_Handler
+    
+    sql = "UPDATE [" & AT_GENKA_BRANCH & "] AS E " & _
+          "LEFT JOIN [" & AT_ICUBE_HISTORY & "] AS I " & _
+          "ON (E.[枝番工事コード] & E.[工事価格]) = (I.[枝番工事コード] & I.[工事価格]) " & _
+          "SET E.[枝番工事コードerr] = 'Icubeと枝番工事コード不一致' " & _
+          "WHERE I.[枝番工事コード] Is Null;"
+    db.Execute sql, dbFailOnError
+    Debug.Print "  -> Icube累計との整合性検証完了"
+    Exit Sub
+Err_Handler:
+    Debug.Print "Validation Error: " & Err.Description
+End Sub
 
 

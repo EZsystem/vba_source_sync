@@ -1,33 +1,34 @@
 ﻿Attribute VB_Name = "acc_mod_MappingTemplate"
-'-------------------------------------
-' Module: acc_mod_MappingTemplate
-' 説明   : プロジェクト全体のオブジェクト名管理およびマッピングツール
-' 更新日 : 2026/03/26
-'-------------------------------------
-'Attribute VB_Name = "acc_mod_MappingTemplate"
+'Attribute VB_Name = "acc_mod_Genka_MappingManager"
+'----------------------------------------------------------------
+' Module: acc_mod_Genka_MappingManager (Original: acc_mod_MappingTemplate)
+' 説明   : 原価管理システム用オブジェクト名の定義、およびマッピング管理ユーティリティ。
+' 更新日 : 2026/03/30
+'----------------------------------------------------------------
 Option Compare Database
 Option Explicit
 
 '===========================================================
-' 【RN_ProjectSummary】 オブジェクト定数 最終定義版
+' 1. オブジェクト定数定義 (Table/Query Names)
 '===========================================================
-' --- 1. iCube インポート・ワークテーブル ---
+
+' --- iCube インポート・ワークテーブル ---
 Public Const AT_ICUBE As String = "at_Icube"
 Public Const AT_ICUBE_HISTORY As String = "at_Icube_累計"
 Public Const AT_ICUBE_IMPORT_WORK As String = "at_Temp_Icube_Import"
 Public Const AT_ICUBE_COL_SETTING As String = "at_Icube_ColSetting"
 
-' --- 2. バリデーション用マスタ ---
-Public Const AT_BUILDING_USE_MAP As String = "at_建物用途正誤表"       ' 旧: tbl_建物用途正誤表
-Public Const AT_PRICE_CATEGORY_MAP As String = "at_工事金額区分表"    ' 旧: tbl_工事金額区分表
-Public Const AT_CLIENT_DATA As String = "at_顧客データ"                ' 旧: tbl_顧客データ
-Public Const AT_BRANCH_WORK_HISTORY As String = "at_支店作業所_累計"   ' 旧: t_支店作業所_累計
-Public Const AT_JURISDICTION_MAP As String = "at_管轄作業所_RN部恒久作業所3"      ' 旧: tb_管轄作業所_RN部恒久作業所3
-Public Const AT_TEMP_PROJECT_MAP As String = "at_仮基本工事"           ' 旧: tb_仮基本工事
-Public Const AT_PROJECT_NAME_CLEAN As String = "at_工事名cle"          ' 旧: tbl_工事名cle
-Public Const AT_ERR_SAGYOSHO As String = "at_err作業所"        ' 旧: t_err作業所
+' --- バリデーション用マスタ ---
+Public Const AT_BUILDING_USE_MAP As String = "at_建物用途正誤表"
+Public Const AT_PRICE_CATEGORY_MAP As String = "at_工事金額区分表"
+Public Const AT_CLIENT_DATA As String = "at_顧客データ"
+Public Const AT_BRANCH_WORK_HISTORY As String = "at_支店作業所_累計"
+Public Const AT_JURISDICTION_MAP As String = "at_管轄作業所_RN部恒久作業所3"
+Public Const AT_TEMP_PROJECT_MAP As String = "at_仮基本工事"
+Public Const AT_PROJECT_NAME_CLEAN As String = "at_工事名cle"
+Public Const AT_ERR_SAGYOSHO As String = "at_err作業所"
 
-' --- 3. 関連マスタ ---
+' --- 関連マスタ ---
 Public Const AT_KIHON_KANKO As String = "at_基本工事_完工"
 Public Const AT_KIHON_SAGYO As String = "at_基本工事_作業所"
 Public Const AT_KIHON_JUCHU As String = "at_基本工事_受注"
@@ -35,131 +36,88 @@ Public Const AT_PROJECT_INFO As String = "at_工事コード情報"
 Public Const AT_EDABAN As String = "at_枝番工事"
 Public Const AT_LINK_KIHON_NAME As String = "at_基本工事名称_リンク"
 
-' --- 4. ツール管理・クエリ ---
+' --- ツール管理・クエリ ---
 Public Const AT_MAPPING_INFO As String = "at_取込マッピング_Template"
 Public Const AQ_SEL_KIHON_NAME As String = "sel_基本工事名称"
 
-' --- 5. 原価管理システム (costManagement_統合分) ---
+' --- 原価管理システム (Cost Management) ---
 Public Const AT_GENKA_IMPORT_WORK As String = "at_Temp_原価S_import"
 Public Const AT_GENKA_BASIC As String = "at_原価S_基本工事"
 Public Const AT_GENKA_BRANCH As String = "at_原価S_枝番工事"
-Public Const AT_GENKA_COL_SETTING As String = "at_原価S_ColSetting"
+Public Const AT_GENKA_SETTING_COM As String = "at_原価S_ColSettingCom"
+Public Const AT_GENKA_SETTING_VAR As String = "at_原価S_ColSettingVar"
 Public Const AT_GENKA_MANUAL_FIX As String = "at_原価S_枝番工事_手動最終補正"
 
-'=================================================
-' サブルーチン名 : Generate_MappingTemplate_FromList
-' 概要   : マッピングひな型生成のメイン処理
-'=================================================
-Public Sub Generate_MappingTemplate_FromList()
+'===========================================================
+' 2. マッピングひな型生成ユーティリティ (Development Tools)
+'===========================================================
+
+'----------------------------------------------------------------
+' ユーティリティ名 : Run_Create_Mapping_Template_Tables
+' 概要            : 指定のテーブルを基に、マッピング用のひな型データを生成
+'----------------------------------------------------------------
+Public Sub Run_Create_Mapping_Template_Tables()
     Dim db As DAO.Database: Set db = CurrentDb
-    
-    ' 本テーブル選択
     Dim tableMain As String
-    tableMain = Get_TableNameFromList("本テーブルを選択")
-    If tableMain = "" Then MsgBox "処理をキャンセルしました", vbExclamation: Exit Sub
     
-    ' ひな型生成処理呼び出し (定数 AT_MAPPING_INFO を使用)
-    Call Generate_MappingTemplateCore(tableMain, AT_MAPPING_INFO)
+    ' テーブル選択の疑似UI (InputBox)
+    tableMain = Get_TableName_From_User("マッピング対象の本番テーブルを選択してください")
+    If tableMain = "" Then Exit Sub
+    
+    Call Build_Mapping_Template_Core(tableMain)
 End Sub
 
-'=================================================
-' 内部関数 : Get_TableNameFromList
-'=================================================
-Private Function Get_TableNameFromList(promptTitle As String) As String
-    Dim db As DAO.Database: Set db = CurrentDb
-    Dim td As DAO.TableDef
-    Dim tableList As String
+Private Function Get_TableName_From_User(title As String) As String
+    Dim td As DAO.TableDef, msg As String, i As Long, tableArray() As String
+    For Each td In CurrentDb.TableDefs
+        If Left(td.Name, 4) <> "MSys" Then msg = msg & (i + 1) & ". " & td.Name & vbCrLf: i = i + 1
+    Next
+    If i = 0 Then Exit Function
     
-    For Each td In db.TableDefs
-        If Left(td.Name, 4) <> "MSys" Then
-            tableList = tableList & td.Name & ";"
-        End If
-    Next td
-    If tableList = "" Then Exit Function
+    ReDim tableArray(i - 1): i = 0
+    For Each td In CurrentDb.TableDefs
+        If Left(td.Name, 4) <> "MSys" Then tableArray(i) = td.Name: i = i + 1
+    Next
     
-    Dim tableArray() As String
-    tableArray = Split(Left(tableList, Len(tableList) - 1), ";")
-    
-    Dim i As Long
-    Dim msg As String
-    msg = "番号で " & promptTitle & vbCrLf & vbCrLf
-    For i = LBound(tableArray) To UBound(tableArray)
-        msg = msg & (i + 1) & ". " & tableArray(i) & vbCrLf
-    Next i
-    
-    Dim choice As Variant
-    choice = InputBox(msg & vbCrLf & "番号を入力してください : ", promptTitle)
+    Dim choice As Variant: choice = InputBox(msg & vbCrLf & "番号を入力:", title)
     If IsNumeric(choice) Then
-        If choice >= 1 And choice <= UBound(tableArray) + 1 Then
-            Get_TableNameFromList = tableArray(choice - 1)
-        End If
+        If choice >= 1 And choice <= UBound(tableArray) + 1 Then Get_TableName_From_User = tableArray(choice - 1)
     End If
 End Function
 
-'=================================================
-' 内部処理 : Generate_MappingTemplateCore
-'=================================================
-Private Sub Generate_MappingTemplateCore(tableMain As String, tableTemp As String)
+Private Sub Build_Mapping_Template_Core(tableMain As String)
     Dim db As DAO.Database: Set db = CurrentDb
     Dim tdefMain As DAO.TableDef: Set tdefMain = db.TableDefs(tableMain)
-    Dim tdefTemp As DAO.TableDef: Set tdefTemp = db.TableDefs(tableTemp)
-    
-    Dim dictTempFields As Object: Set dictTempFields = CreateObject("Scripting.Dictionary")
+    Dim rsMapping As DAO.Recordset: Set rsMapping = db.OpenRecordset("[" & AT_MAPPING_INFO & "]", dbOpenDynaset)
     Dim fld As DAO.Field
-    For Each fld In tdefTemp.Fields
-        dictTempFields(fld.Name) = True
-    Next fld
-    
-    Dim rsMapping As DAO.Recordset
-    Set rsMapping = db.OpenRecordset("[" & AT_MAPPING_INFO & "]", dbOpenDynaset)
     
     For Each fld In tdefMain.Fields
-        If (fld.Attributes And dbAutoIncrField) Or fld.Type = dbGUID Then GoTo NextField
+        If (fld.Attributes And dbAutoIncrField) Or fld.Type = dbGUID Then GoTo NextF
         
-        If Not IsMappingExists(tableMain, fld.Name) Then
+        ' 存在チェック (簡易)
+        Dim checkRS As DAO.Recordset
+        Set checkRS = db.OpenRecordset("SELECT * FROM [" & AT_MAPPING_INFO & "] WHERE [本テーブル名]='" & tableMain & "' AND [本フィールド名]='" & fld.Name & "'")
+        If checkRS.EOF Then
             rsMapping.AddNew
             rsMapping!本テーブル名 = tableMain
             rsMapping!本フィールド名 = fld.Name
-            rsMapping!仮フィールド名 = IIf(dictTempFields.Exists(fld.Name), fld.Name, "")
-            rsMapping!データ型 = GetFieldTypeName(fld.Type)
+            rsMapping!データ型 = Get_Field_Type_Literal(fld.Type)
             rsMapping!取込対象 = True
-            rsMapping!デフォルト値 = ""
             rsMapping.Update
         End If
-NextField:
+        checkRS.Close
+NextF:
     Next fld
-    
     rsMapping.Close
-    MsgBox "マッピングひな型の生成が完了しました", vbInformation
+    MsgBox "マッピングひな型の生成が完了しました (" & tableMain & ")", vbInformation
 End Sub
 
-'=================================================
-' 内部補助関数
-'=================================================
-Private Function GetFieldTypeName(fieldType As Integer) As String
-    Select Case fieldType
-        Case dbBoolean:  GetFieldTypeName = "Yes/No型"
-        Case dbByte:     GetFieldTypeName = "バイト型"
-        Case dbInteger:  GetFieldTypeName = "整数型"
-        Case dbLong:     GetFieldTypeName = "長整数型"
-        Case dbSingle:   GetFieldTypeName = "単精度型"
-        Case dbDouble:   GetFieldTypeName = "倍精度型"
-        Case dbCurrency: GetFieldTypeName = "通貨型"
-        Case dbDate:     GetFieldTypeName = "日付/時刻型"
-        Case dbText:     GetFieldTypeName = "テキスト型"
-        Case dbMemo:     GetFieldTypeName = "メモ型"
-        Case Else:       GetFieldTypeName = "未対応型"
+Private Function Get_Field_Type_Literal(t As Integer) As String
+    Select Case t
+        Case dbBoolean: Get_Field_Type_Literal = "Yes/No型": Case dbLong: Get_Field_Type_Literal = "長整数型"
+        Case dbDouble: Get_Field_Type_Literal = "倍精度型": Case dbCurrency: Get_Field_Type_Literal = "通貨型"
+        Case dbDate: Get_Field_Type_Literal = "日付/時刻型": Case dbText: Get_Field_Type_Literal = "テキスト型"
+        Case Else: Get_Field_Type_Literal = "その他"
     End Select
-End Function
-
-Private Function IsMappingExists(tableMain As String, FieldName As String) As Boolean
-    Dim rs As DAO.Recordset
-    Set rs = CurrentDb.OpenRecordset( _
-        "SELECT * FROM [" & AT_MAPPING_INFO & "] " & _
-        "WHERE [本テーブル名] = '" & Replace(tableMain, "'", "''") & "' " & _
-        "AND [本フィールド名] = '" & Replace(FieldName, "'", "''") & "'", _
-        dbOpenSnapshot)
-    IsMappingExists = Not rs.EOF
-    rs.Close
 End Function
 
