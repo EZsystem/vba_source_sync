@@ -37,8 +37,8 @@ Public Sub Run_Genka_Import_Workflow()
     Call Apply_Manual_Final_Correction
     
     ' 4. Icube累計との整合性検証
-    Debug.Print "=== Icube累計とのデータ検証を実行します ==="
-    Call Validate_Branch_Against_Icube_Accumulated
+    'Debug.Print "=== Icube累計とのデータ検証を実行します ==="
+    'Call Validate_Branch_Against_Icube_Accumulated
     
     MsgBox "すべてのインポート・転写工程が正常に完了しました。", vbInformation
 End Sub

@@ -1,4 +1,4 @@
-CREATE TABLE [△at_原価S_ColSetting] (
+CREATE TABLE [✕at_原価S_ColSetting] (
     [配列列番号] LONG,
     [配列タイトル名] TEXT,
     [accテーブル名] TEXT,
@@ -9,5 +9,5 @@ CREATE TABLE [△at_原価S_ColSetting] (
     [基本工事_本テーブルタイトル名] TEXT,
     [枝番工事_仮テーブルタイトル名] TEXT,
     [枝番工事_本テーブルタイトル名] TEXT,
-    CONSTRAINT PK_△at_原価S_ColSetting PRIMARY KEY ([配列列番号])
+    CONSTRAINT PK_✕at_原価S_ColSetting PRIMARY KEY ([配列列番号])
 );
