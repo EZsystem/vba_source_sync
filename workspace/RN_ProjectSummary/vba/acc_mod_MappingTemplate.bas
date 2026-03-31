@@ -48,6 +48,9 @@ Public Const AT_GENKA_SETTING_COM As String = "at_原価S_ColSettingCom"
 Public Const AT_GENKA_SETTING_VAR As String = "at_原価S_ColSettingVar"
 Public Const AT_GENKA_MANUAL_FIX As String = "at_原価S_枝番工事_手動最終補正"
 
+' --- エクスポート管理 ---
+Public Const AT_EXPORT_CONFIG As String = "_at_ExportConfig"
+
 '===========================================================
 ' 2. マッピングひな型生成ユーティリティ (Development Tools)
 '===========================================================
