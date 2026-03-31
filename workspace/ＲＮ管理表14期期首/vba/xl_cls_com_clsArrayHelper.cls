@@ -1,0 +1,222 @@
+﻿VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "com_clsArrayHelper"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+'=====================================
+' Class Module: com_clsArrayHelper
+' 説明　：2次元配列の解析や演算を提供するユーティリティ
+' 作成日：2025/04/25
+' 更新日：再生成 by そうじろう
+'=====================================
+Option Explicit
+
+' --- 内部保持変数 ---
+Private arrData As Variant
+
+'=================================================
+' プロパティ名 : Let data
+' 引数 : value - 2次元配列データ
+' 機能 : 処理対象となる2次元配列データ（タイトル＋データ）を保持するにゃ
+'=================================================
+Public Property Let data(value As Variant)
+    arrData = value
+End Property
+
+'=================================================
+' 関数名 : GetColIndex
+' 引数 : colName - 探索する列名
+' 戻り値 : 対応する列番号（見つからないときは -1）
+' 機能 : 配列の1行目（タイトル行）から、列名に対応する列番号を取得するにゃ
+'=================================================
+Public Function GetColIndex(colName As String) As Long
+    Dim j As Long
+    For j = LBound(arrData, 2) To UBound(arrData, 2)
+        If arrData(1, j) = colName Then
+            GetColIndex = j
+            Exit Function
+        End If
+    Next j
+    GetColIndex = -1
+End Function
+
+'=================================================
+' 関数名 : CalculateOneRow
+' 引数 : row - 対象行番号
+'        col1, col2 - 計算対象の列名
+'        op - 演算子（add, sub, mul, div）
+'        doRound, digits - 丸め設定（オプション）
+' 戻り値 : 計算結果（Double）
+' 機能 : 指定行の2列間で指定された演算を実行し、必要に応じて丸めて返すにゃ
+'=================================================
+Public Function CalculateOneRow(row As Long, col1 As String, col2 As String, op As String, Optional doRound As Boolean = False, Optional digits As Integer = 0) As Double
+    Dim i1 As Long, i2 As Long
+    i1 = GetColIndex(col1)
+    i2 = GetColIndex(col2)
+    If i1 = -1 Or i2 = -1 Then Err.Raise vbObjectError + 100, , "列名が見つかりません"
+    Dim v1 As Double: v1 = CDbl(arrData(row, i1))
+    Dim v2 As Double: v2 = CDbl(arrData(row, i2))
+    Dim res As Double
+    Select Case op
+        Case "add": res = v1 + v2
+        Case "sub": res = v1 - v2
+        Case "mul": res = v1 * v2
+        Case "div": If v2 <> 0 Then res = v1 / v2 Else res = 0
+        Case Else: Err.Raise vbObjectError + 101, , "不正な演算子"
+    End Select
+    If doRound And digits >= 0 Then res = Round(res, digits)
+    CalculateOneRow = res
+End Function
+
+'=================================================
+' 関数名 : CalculateIfMatch
+' 引数 : row - 行番号
+'        condCol - 条件列名
+'        expVal - 条件一致値
+'        col1, col2 - 計算対象列名
+'        op - 演算子
+'        doRound, digits - 丸め設定（オプション）
+' 戻り値 : 計算結果（条件一致時のみ）
+' 機能 : 指定列の値が条件値と一致する行に対してのみ、計算を実行して返すにゃ
+'=================================================
+Public Function CalculateIfMatch(row As Long, condCol As String, expVal As Variant, col1 As String, col2 As String, op As String, Optional doRound As Boolean = False, Optional digits As Integer = 0) As Double
+    Dim idx As Long: idx = GetColIndex(condCol)
+    If idx = -1 Then Err.Raise vbObjectError + 102, , "条件列が見つかりません"
+    If arrData(row, idx) <> expVal Then
+        CalculateIfMatch = 0: Exit Function
+    End If
+    CalculateIfMatch = CalculateOneRow(row, col1, col2, op, doRound, digits)
+End Function
+
+'=================================================
+' 関数名 : IsValueEqual
+' 引数 : row, colName, expected
+' 機能 : 指定行・列の値が expected と等しいかを判定するにゃ
+'=================================================
+Public Function IsValueEqual(row As Long, colName As String, expected As Variant) As Boolean
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    IsValueEqual = (arrData(row, idx) = expected)
+End Function
+
+'=================================================
+' 関数名 : IsBlank
+' 引数 : row, colName
+' 機能 : 指定セルが空欄かどうかを判定するにゃ（空文字または NULL）
+'=================================================
+Public Function IsBlank(row As Long, colName As String) As Boolean
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    IsBlank = (Trim(arrData(row, idx) & "") = "")
+End Function
+
+'=================================================
+' 関数名 : IsGreaterThan
+' 引数 : row, colName, threshold
+' 機能 : 指定セルの数値が閾値より大きいかを判定するにゃ
+'=================================================
+Public Function IsGreaterThan(row As Long, colName As String, threshold As Double) As Boolean
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    If IsNumeric(arrData(row, idx)) Then IsGreaterThan = (arrData(row, idx) > threshold)
+End Function
+
+'=================================================
+' 関数名 : IsBetween
+' 引数 : row, colName, minVal, maxVal
+' 機能 : 指定セルの値が範囲内（minVal?maxVal）にあるかを判定するにゃ
+'=================================================
+Public Function IsBetween(row As Long, colName As String, minVal As Double, maxVal As Double) As Boolean
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    If IsNumeric(arrData(row, idx)) Then IsBetween = (arrData(row, idx) >= minVal And arrData(row, idx) <= maxVal)
+End Function
+
+'=================================================
+' 関数名 : Contains
+' 引数 : row, colName, keyword
+' 機能 : セル内に指定キーワードが含まれているかを判定するにゃ（部分一致）
+'=================================================
+Public Function Contains(row As Long, colName As String, keyword As String) As Boolean
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    Contains = (InStr(1, arrData(row, idx) & "", keyword, vbTextCompare) > 0)
+End Function
+
+'=================================================
+' 関数名 : StartsWith
+' 引数 : row, colName, prefix
+' 機能 : セル値が指定の prefix で始まっているかを判定するにゃ
+'=================================================
+Public Function StartsWith(row As Long, colName As String, prefix As String) As Boolean
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    StartsWith = (Left(arrData(row, idx) & "", Len(prefix)) = prefix)
+End Function
+
+'=================================================
+' 関数名 : EndsWith
+' 引数 : row, colName, suffix
+' 機能 : セル値が指定の suffix で終わっているかを判定するにゃ
+'=================================================
+Public Function EndsWith(row As Long, colName As String, suffix As String) As Boolean
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    EndsWith = (Right(arrData(row, idx) & "", Len(suffix)) = suffix)
+End Function
+
+'=================================================
+' 関数名 : GetValue
+' 引数 : row, colName
+' 機能 : 指定セルの値を返すにゃ（Variant）
+'=================================================
+Public Function GetValue(row As Long, colName As String) As Variant
+    Dim idx As Long: idx = GetColIndex(colName)
+    If idx = -1 Then Exit Function
+    GetValue = arrData(row, idx)
+End Function
+
+'=================================================
+' 関数名 : GetNumericValue
+' 引数 : row, colName
+' 機能 : 指定セルの数値値を返すにゃ（非数値や空欄は 0 にする）
+'=================================================
+Public Function GetNumericValue(row As Long, colName As String) As Double
+    Dim v As Variant: v = GetValue(row, colName)
+    If IsNumeric(v) Then GetNumericValue = CDbl(v) Else GetNumericValue = 0
+End Function
+
+'=================================================
+' 関数名 : ToTextArray
+' 説明   : 任意の2次元配列のすべての値を文字列として整形して返す
+'         Null・数値・改行・空白を安全に変換する
+' 引数   : sourceArray（Variant） 元の2次元配列（行, 列）
+' 戻り値 : Variant（2次元配列）   文字列化された配列
+'=================================================
+Public Function ToTextArray(sourceArray As Variant) As Variant
+    Dim sanitizer As acc_clsTextSanitizer
+    Set sanitizer = New acc_clsTextSanitizer
+
+    Dim rowCount As Long
+    Dim colCount As Long
+
+    rowCount = UBound(sourceArray, 1)
+    colCount = UBound(sourceArray, 2)
+
+    Dim resultArray() As String
+    ReDim resultArray(1 To rowCount, 1 To colCount)
+
+    Dim r As Long, c As Long
+    For r = 1 To rowCount
+        For c = 1 To colCount
+            resultArray(r, c) = sanitizer.CleanText(sourceArray(r, c))
+        Next c
+    Next r
+
+    ToTextArray = resultArray
+End Function    ' ← ToTextArray 終了
+

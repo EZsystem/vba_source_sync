@@ -1,0 +1,66 @@
+﻿VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "xl_clsRangeAccessor"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+'=====================================
+' Class Module: xl_clsRangeAccessor
+' 説明　：ワークシート範囲と配列間の相互変換および最終行・最終列取得を提供するユーティリティ
+' 作成日：2025/04/25
+' 更新日：再生成 by そうじろう
+'=====================================
+Option Explicit
+
+' --- 内部保持変数 ---
+'（このクラスでは内部変数はありません）
+
+'=================================================
+' 関数名 : RangeToArray
+' 引数 : ws - 対象のワークシート
+'        rng - 対象のセル範囲
+' 戻り値 : セル範囲の2次元配列（Variant）
+' 機能 : 指定範囲の値を配列として取得するにゃ
+'=================================================
+Public Function RangeToArray(ws As Worksheet, rng As Range) As Variant
+    RangeToArray = rng.value
+End Function
+
+'=================================================
+' サブルーチン名 : ArrayToRange
+' 引数 : ws - 対象のワークシート
+'        targetRng - 書き込み対象のセル範囲
+'        data - 2次元配列（Variant）
+' 機能 : 配列データを指定範囲に一括で書き込むにゃ
+'=================================================
+Public Sub ArrayToRange(ws As Worksheet, targetRng As Range, data As Variant)
+    targetRng.value = data
+End Sub
+
+'=================================================
+' 関数名 : GetLastRow
+' 引数 : ws - 対象のワークシート
+'        col（省略可）- チェックする列番号（既定値 = 1）
+' 戻り値 : 最終行番号（Long）
+' 機能 : 指定列の最下端までのうち、最終データ行を取得するにゃ
+'=================================================
+Public Function GetLastRow(ws As Worksheet, Optional col As Variant) As Long
+    If IsMissing(col) Then col = 1
+    GetLastRow = ws.Cells(ws.Rows.Count, col).End(xlUp).row
+End Function
+
+'=================================================
+' 関数名 : GetLastColumn
+' 引数 : ws - 対象のワークシート
+'        row（省略可）- チェックする行番号（既定値 = 1）
+' 戻り値 : 最終列番号（Long）
+' 機能 : 指定行の右端までのうち、最終データ列を取得するにゃ
+'=================================================
+Public Function GetLastColumn(ws As Worksheet, Optional row As Variant) As Long
+    If IsMissing(row) Then row = 1
+    GetLastColumn = ws.Cells(row, ws.Columns.Count).End(xlToLeft).Column
+End Function
+
