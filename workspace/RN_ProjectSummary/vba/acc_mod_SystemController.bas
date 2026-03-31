@@ -90,7 +90,7 @@ Public Sub RunExternalExcelMacro(ByVal filePath As String, ByVal macroName As St
     xlApp.Run macroName
     
     ' 保存して閉じる
-    wb.Close saveChanges:=True
+    wb.Close SaveChanges:=True
     
 Clean_Up:
     If Not xlApp Is Nothing Then

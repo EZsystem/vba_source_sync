@@ -129,7 +129,7 @@ Public Sub Process_Final_Cleansing(ByRef ErrorLog As com_clsErrorUtility)
         Loop
         
         RsT.Edit
-        RsT!追加工事名称_cle = Replace(StrConv(Cln, vbWide), "��", "(株)")
+        RsT!追加工事名称_cle = Replace(StrConv(Cln, vbWide), "??", "(株)")
         RsT.Update
         RsT.MoveNext
     Loop
@@ -196,13 +196,31 @@ Private Sub Process_DateConversion_Smart(ByRef cleaner As acc_clsDataCleaner)
     
     For i = 0 To UBound(Flds)
         TargetFld = IIf(Prfx(i) = "受注", "受注計上日_日付型", Prfx(i) & "日_日付型")
-        Set rs = CurrentDb.OpenRecordset("SELECT No, " & Flds(i) & ", " & Prfx(i) & "年度, " & Prfx(i) & "期, " & Prfx(i) & "Q, " & Prfx(i) & "月, " & TargetFld & " FROM [" & AT_ICUBE & "]", dbOpenDynaset)
+        Set rs = CurrentDb.OpenRecordset("SELECT No, " & Flds(i) & ", " & Prfx(i) & "年度, " & Prfx(i) & "期, " & Prfx(i) & "Q, " & Prfx(i) & "月, " & TargetFld & ", 一件工事判定, 基本工事名称 FROM [" & AT_ICUBE & "]", dbOpenDynaset)
         Do While Not rs.EOF
             TDate = cleaner.CleanDate(rs.Fields(1).Value)
             If Year(TDate) > 1900 Then
                 rs.Edit
                 rs.Fields(Prfx(i) & "年度").Value = GetFiscalYear(TDate)
-                rs.Fields(Prfx(i) & "期").Value = GetFiscalYear(TDate) - BASE_YEAR + 1
+                
+                ' --- 完工期かつ小口工事の場合のみ名称から算出 ---
+                Dim isSmallHandled As Boolean: isSmallHandled = False
+                If Prfx(i) = "完工" And rs!一件工事判定 = "小口工事" Then
+                    Dim projName As String: projName = Nz(rs!基本工事名称, "")
+                    Dim posYear As Long: posYear = InStr(projName, "年度")
+                    If posYear >= 3 Then
+                        Dim yearVal As Integer
+                        yearVal = val(StrConv(Mid(projName, posYear - 2, 2), vbNarrow))
+                        rs.Fields(Prfx(i) & "期").Value = yearVal - 12
+                        isSmallHandled = True
+                    End If
+                End If
+                
+                ' 通常ロジック (一件工事、または受注期の場合)
+                If Not isSmallHandled Then
+                    rs.Fields(Prfx(i) & "期").Value = GetFiscalYear(TDate) - BASE_YEAR + 1
+                End If
+                
                 rs.Fields(Prfx(i) & "Q").Value = GetFiscalQuarter(TDate)
                 rs.Fields(Prfx(i) & "月").Value = Month(TDate)
                 rs.Fields(TargetFld).Value = TDate
@@ -313,14 +331,14 @@ Private Sub Internal_MapTempProject(ByVal FldC As String, ByVal FldN As String, 
     Set RsI = CurrentDb.OpenRecordset("SELECT * FROM [" & AT_ICUBE & "] WHERE 一件工事判定 = '小口工事'", dbOpenDynaset)
     
     Do While Not RsI.EOF
-        Dim wS As String: wS = Trim(Nz(RsI!基本工事名_作業所, ""))
+        Dim ws As String: ws = Trim(Nz(RsI!基本工事名_作業所, ""))
         Dim pP As String: pP = Trim(Nz(RsI!基本工事名_官民, ""))
         Dim qV As String: qV = IIf(IsO, ConvertToZenkakuNumber(Trim(Nz(RsI!受注Q, ""))) & "Q", Trim(Nz(RsI!基本工事名_Q, "")))
         Dim cR As String: cR = Trim(Nz(RsI!基本工事名_繰越, ""))
         
         RsR.MoveFirst
         Do While Not RsR.EOF
-            Dim Match As Boolean: Match = (Trim(Nz(RsR!基本工事名_作業所, "")) = wS And Trim(Nz(RsR!基本工事名_官民, "")) = pP And Trim(Nz(RsR!基本工事名_Q, "")) = qV)
+            Dim Match As Boolean: Match = (Trim(Nz(RsR!基本工事名_作業所, "")) = ws And Trim(Nz(RsR!基本工事名_官民, "")) = pP And Trim(Nz(RsR!基本工事名_Q, "")) = qV)
             If Not IsO Then Match = Match And (Trim(Nz(RsR!基本工事名_繰越, "")) = cR)
             
             If Match Then
@@ -389,3 +407,4 @@ Private Function ConvertToZenkakuNumber(ByVal s As String) As String
     Next
     ConvertToZenkakuNumber = r
 End Function
+

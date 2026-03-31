@@ -242,13 +242,13 @@ End Function
 
 '===========================================================
 
-Public Function GetSupportedVBAType(ByVal jpType As String) As String
+'Public Function GetSupportedVBAType(ByVal jpType As String) As String
+'
+ '   Dim t As String: t = Trim(jpType)
 
-    Dim t As String: t = Trim(jpType)
+  '  End Select
 
-    End Select
-
-End Function
+'End Function
 
 '===========================================================
 ' --- 以下、acc_clsDataCleaner_Test から統合された新ロジック ---

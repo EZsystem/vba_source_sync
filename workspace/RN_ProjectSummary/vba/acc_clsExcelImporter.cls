@@ -39,15 +39,15 @@ End Sub
 ' メソッド : ImportFromWorksheet
 ' 説明：物理置換ロジックを用いて仮テーブルへ書き込む
 '===========================================================
-Public Sub ImportFromWorksheet(ByVal wS As Object)
+Public Sub ImportFromWorksheet(ByVal ws As Object)
     Dim dataArr     As Variant
     Dim lastRow     As Long
     Dim r As Long, c As Long
     Dim rsTemp      As DAO.Recordset
     
     ' 1. Excelを配列に一括読込 (プロパティで指定された範囲を使用)
-    lastRow = wS.Cells(wS.Rows.count, StartColumn).End(-4162).Row ' -4162 = xlUp
-    dataArr = wS.Range(wS.Cells(HeaderRow, StartColumn), wS.Cells(lastRow, EndColumn)).Value
+    lastRow = ws.Cells(ws.Rows.count, StartColumn).End(-4162).Row ' -4162 = xlUp
+    dataArr = ws.Range(ws.Cells(HeaderRow, StartColumn), ws.Cells(lastRow, EndColumn)).Value
     
     ' 2. 配列1行目(タイトル)を物理的に翻訳(置換)
     For c = 1 To UBound(dataArr, 2)

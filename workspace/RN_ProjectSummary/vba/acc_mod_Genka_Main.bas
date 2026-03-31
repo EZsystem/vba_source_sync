@@ -145,10 +145,16 @@ Private Function Transfer_Temp_To_Production() As Boolean
     v_K1 = "": v_K2 = "": v_K3 = "": v_K4 = "": v_K5 = "": v_K6 = ""
     
     Do Until rsIn.EOF
+        ' --- 行ごとのリセット (持ち越し防止) ---
+        v_K5 = "": v_K6 = ""
+        
         f1_val = Trim(Nz(rsIn!f1, ""))
         If f1_val = "" Then GoTo NextRow
         
         If f1_val = "1" Then
+            ' --- 新規案件開始時のリセット ---
+            v_K3 = "": v_K4 = ""
+            
             f3_val = Format_Genka_String(Nz(rsIn!f3, ""))
             spacePos = InStr(f3_val, " ")
             v_K1 = IIf(spacePos > 0, Left(f3_val, spacePos - 1), f3_val)
@@ -159,11 +165,23 @@ Private Function Transfer_Temp_To_Production() As Boolean
             rsKihon.Update
             countInsK = countInsK + 1
             
-        ElseIf f1_val = "2" Or f1_val = "3" Then
+        ElseIf f1_val = "2" Then
+            ' 【F1=2】通常の案件情報の更新
             rsKihon.FindFirst "[基本工事コード] = '" & Replace(v_K1, "'", "''") & "'"
             If Not rsKihon.NoMatch Then
                 rsKihon.Edit
                 Call Apply_Field_Mapping_Logic(rsKihon, dictMap, validKihon, rsIn, v_K1, v_K2, v_K3, v_K4, v_K5, v_K6)
+                rsKihon.Update
+                countUpdK = countUpdK + 1
+            End If
+            
+        ElseIf f1_val = "3" Then
+            ' 【F1=3】K7(経費)の独立更新
+            rsKihon.FindFirst "[基本工事コード] = '" & Replace(v_K1, "'", "''") & "'"
+            If Not rsKihon.NoMatch Then
+                rsKihon.Edit
+                ' マッピング外の独立処理: F22を既払高：経費に転写
+                rsKihon![既払高：経費] = val(Replace(Replace(Nz(rsIn!f22, "0"), ",", ""), "\", ""))
                 rsKihon.Update
                 countUpdK = countUpdK + 1
             End If
@@ -177,7 +195,7 @@ Private Function Transfer_Temp_To_Production() As Boolean
         ElseIf val(f1_val) >= 5 Then
             f2_val = Trim(Nz(rsIn!f2, ""))
             If f2_val <> "" And f2_val <> "管理番号" Then
-                v_K5 = v_K3 & "‐" & f2_val
+                v_K5 = v_K3 & "-" & f2_val
                 v_K6 = Trim(Nz(rsIn!f3, ""))
                 
                 rsEdaban.AddNew
@@ -209,42 +227,52 @@ Private Sub Apply_Field_Mapping_Logic(rsDest As DAO.Recordset, dictMap As Object
                                      v_K1 As String, v_K2 As String, v_K3 As String, _
                                      v_K4 As String, v_K5 As String, v_K6 As String)
     Dim key As Variant, param() As String, destField As String, destType As String
-    Dim rawVal As Variant, strVal As String
+    Dim rawVal As Variant
     
+    ' dictMap(K1-K6, およびFフィールド)を順番に処理
     For Each key In dictMap.Keys
-        param = Split(dictMap(key), "|")
-        destField = param(0): destType = param(1)
-        
-        If validFields.Exists(destField) Then
-            rawVal = Null
-            If Left(CStr(key), 1) = "K" Then
-                Select Case CStr(key)
-                    Case "K1": rawVal = v_K1: Case "K2": rawVal = v_K2
-                    Case "K3": rawVal = v_K3: Case "K4": rawVal = v_K4
-                    Case "K5": rawVal = v_K5: Case "K6": rawVal = v_K6
-                End Select
-            Else
-                rawVal = rsData.Fields(CStr(key)).Value
-            End If
+        ' K7はF1=3ブロックで別途個別処理するため、マッピングからは除外
+        If CStr(key) <> "K7" Then
+            param = Split(dictMap(key), "|")
+            destField = param(0): destType = param(1)
             
-            If Not IsNull(rawVal) Then
-                strVal = Trim(CStr(rawVal))
-                If strVal <> "" Then
-                    If Right(strVal, 1) = "%" Then
-                        strVal = Replace(strVal, "%", "")
-                        If IsNumeric(strVal) Then rsDest.Fields(destField).Value = CDbl(strVal) / 100
-                    Else
-                        If InStr(destType, "通貨") > 0 Or InStr(destType, "倍精度") > 0 Or InStr(destType, "数値") > 0 Then
-                            strVal = Replace(Replace(strVal, ",", ""), "\", "")
-                            If IsNumeric(strVal) Then rsDest.Fields(destField).Value = strVal
-                        Else
-                            rsDest.Fields(destField).Value = strVal
-                        End If
-                    End If
+            If validFields.Exists(destField) Then
+                rawVal = Null
+                If Left(CStr(key), 1) = "K" Then
+                    Select Case CStr(key)
+                        Case "K1": rawVal = v_K1: Case "K2": rawVal = v_K2
+                        Case "K3": rawVal = v_K3: Case "K4": rawVal = v_K4
+                        Case "K5": rawVal = v_K5: Case "K6": rawVal = v_K6
+                    End Select
+                Else
+                    rawVal = rsData.Fields(CStr(key)).Value
                 End If
+                
+                Call Apply_OneField_To_Dest(rsDest, destField, destType, rawVal)
             End If
         End If
     Next key
+End Sub
+
+' 1フィールドを実際に代入する補助プロシージャ
+Private Sub Apply_OneField_To_Dest(ByRef rsDest As DAO.Recordset, ByVal destField As String, ByVal destType As String, ByVal rawVal As Variant)
+    Dim strVal As String
+    If Not IsNull(rawVal) Then
+        strVal = Trim(CStr(rawVal))
+        If strVal <> "" Then
+            If Right(strVal, 1) = "%" Then
+                strVal = Replace(strVal, "%", "")
+                If IsNumeric(strVal) Then rsDest.Fields(destField).Value = CDbl(strVal) / 100
+            Else
+                If InStr(destType, "通貨") > 0 Or InStr(destType, "倍精度") > 0 Or InStr(destType, "数値") > 0 Then
+                    strVal = Replace(Replace(strVal, ",", ""), "\", "")
+                    If IsNumeric(strVal) Then rsDest.Fields(destField).Value = strVal
+                Else
+                    rsDest.Fields(destField).Value = strVal
+                End If
+            End If
+        End If
+    End If
 End Sub
 
 '----------------------------------------------------------------
@@ -338,5 +366,7 @@ Public Sub Validate_Branch_Against_Icube_Accumulated()
 Err_Handler:
     Debug.Print "Validation Error: " & Err.Description
 End Sub
+
+
 
 
