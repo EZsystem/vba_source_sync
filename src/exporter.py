@@ -177,7 +177,7 @@ class ExcelInfoExtractor:
             info_lines = [f"Excel File: {Path(file_path).name}", "="*50, ""]
 
             for sheet in wb.Worksheets:
-                info_lines.append(f"■ Sheet: {sheet.Name}")
+                info_lines.append(f"■ Sheet: {sheet.Name} (Object: {sheet.CodeName})")
                 
                 # テーブル（ListObject）の情報を取得
                 if sheet.ListObjects.Count > 0:

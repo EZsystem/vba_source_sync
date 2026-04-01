@@ -215,17 +215,19 @@ End Sub
 ' 関数名 : G_GetSheetByCodeName
 ' 説明   : Workbook内をループし、CodeNameが一致するシートを返します。
 '----------------------------------------------------------------
-Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal codeName As String) As Object
+Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal nameOrCode As String) As Object
     Dim sh As Object
+    
+    ' 1. オブジェクト名 (CodeName) で一致するものを探す
     For Each sh In wb.Sheets
-        If sh.codeName = codeName Then
+        If sh.CodeName = nameOrCode Then
             Set G_GetSheetByCodeName = sh
             Exit Function
         End If
     Next sh
-    Set G_GetSheetByCodeName = Nothing
+    
+    ' 2. 見つからない場合はシートタブ名 (Name) で直接取得を試行
+    On Error Resume Next
+    Set G_GetSheetByCodeName = wb.Sheets(nameOrCode)
+    On Error GoTo 0
 End Function
-
-
-
-
