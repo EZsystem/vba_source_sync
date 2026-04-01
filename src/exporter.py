@@ -5,7 +5,7 @@ from pathlib import Path
 from loguru import logger
 
 class VBAExporter:
-    def __init__(self, workspace_dir, encoding="cp932"):
+    def __init__(self, workspace_dir, encoding="utf-8"):
         self.workspace_dir = Path(workspace_dir)
         self.encoding = encoding
 

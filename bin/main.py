@@ -57,7 +57,7 @@ def select_file_and_encoding():
     
     ttk.Label(frame, text="文字コード:").grid(row=1, column=0, sticky=tk.W, pady=5)
     encoding_cb = ttk.Combobox(frame, textvariable=selected_encoding, state="readonly", width=15)
-    encoding_cb['values'] = ("デフォルト(cp932)", "utf-8", "utf-8-sig", "shift-jis")
+    encoding_cb['values'] = ("デフォルト(utf-8)", "utf-8-sig", "shift-jis", "cp932")
     encoding_cb.grid(row=1, column=1, sticky=tk.W, padx=5, pady=5)
     
     btn_frame = ttk.Frame(frame)
@@ -81,20 +81,20 @@ def main():
         return
 
     # 文字コードの決定ロジック
-    vba_enc = "cp932"       # デフォルト (VBAはcp932が安定)
-    other_enc = "utf-8"     # デフォルト (SQL/他はutf-8)
+    vba_enc = "utf-8"       # デフォルト (VBA同期マクロ側で変換するため、保存はUTF-8でOK)
+    other_enc = "utf-8"     # デフォルト
     
-    if encoding_choice == "utf-8":
-        vba_enc = "utf-8"
-        other_enc = "utf-8"
-    elif encoding_choice == "utf-8-sig":
+    if encoding_choice == "utf-8-sig":
         vba_enc = "utf-8-sig"
         other_enc = "utf-8-sig"
     elif encoding_choice == "shift-jis":
         vba_enc = "shift_jis"
         other_enc = "shift_jis"
-    elif encoding_choice == "デフォルト(cp932)":
+    elif encoding_choice == "cp932":
         vba_enc = "cp932"
+        other_enc = "cp932"
+    elif encoding_choice == "デフォルト(utf-8)":
+        vba_enc = "utf-8"
         other_enc = "utf-8"
     
     logger.info(f"選択文字コード: {encoding_choice} (VBA={vba_enc}, 他={other_enc})")
