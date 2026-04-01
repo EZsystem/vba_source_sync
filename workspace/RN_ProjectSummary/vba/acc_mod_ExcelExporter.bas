@@ -2,7 +2,7 @@ Attribute VB_Name = "acc_mod_ExcelExporter"
 '----------------------------------------------------------------
 ' Module: acc_mod_ExcelExporter
 ' 説明   : 管理テーブル (_at_ExportConfig) 駆動型 Excel エクスポート (診断機能付)
-' 更新日 : 2026/03/31
+' 更新日 : 2026/04/01 (完全復旧 & インテリジェント・マッピング版)
 '----------------------------------------------------------------
 Option Compare Database
 Option Explicit
@@ -63,6 +63,13 @@ Public Sub Execute_Excel_Data_Export()
         Dim snName    As String: snName = Nz(rs!ExcelSheet, "")
         Dim tblName   As String: tblName = Nz(rs!ExcelTable, "")
         
+        ' --- インテリジェント・マッピング (旧名やタブ名をCodeNameへ自動変換) ---
+        Select Case snName
+            Case "xt", "経費M":  snName = SH_CODE_EX_MASTER
+            Case "原価Data":      snName = SH_CODE_EX_GENKA
+            Case "IcubeData":     snName = SH_CODE_EX_ICUBE
+        End Select
+        
         Debug.Print "--- [ID:" & currentID & "] " & procName & " ---"
         Debug.Print "    Query: " & qryName
         Debug.Print "    ExcelTable: " & tblName
@@ -86,8 +93,6 @@ Public Sub Execute_Excel_Data_Export()
                 Debug.Print "    [OK] クエリSQLを更新しました。"
             End If
             On Error GoTo Err_Handler
-        Else
-            Debug.Print "    [SKIP] クエリ名またはテンプレートが空です。"
         End If
         
         ' (B) Excelオープンプロセス
@@ -103,20 +108,15 @@ Public Sub Execute_Excel_Data_Export()
             Else
                 Set xlBook = openWBs(xlPath)
             End If
-        Else
-            Debug.Print "    [ERROR] Excelパスが指定されていません。"
-            GoTo Next_Record
         End If
         
         ' (C) シート・テーブル転送プロセス
         Set xlSheet = Nothing
         On Error Resume Next
-        ' シート名（Caption）ではなくオブジェクト名（CodeName）で取得
         Set xlSheet = G_GetSheetByCodeName(xlBook, snName)
         On Error GoTo Err_Handler
         
         If Not xlSheet Is Nothing Then
-            ' 転送関数側のログを拾うため、ここで呼び出し
             Debug.Print "    [EXEC] データを転送します..."
             Call TransferQueryToExcelTable(db, xlSheet, tblName, qryName)
         Else
@@ -161,7 +161,6 @@ Private Sub TransferQueryToExcelTable(ByRef db As DAO.Database, ByRef ws As Obje
     Dim lo As Object
     Dim rowCount As Long
     
-    ' 1. レコードセット取得
     On Error Resume Next
     Set rs = db.OpenRecordset(qryName, dbOpenSnapshot)
     If Err.Number <> 0 Then
@@ -169,7 +168,6 @@ Private Sub TransferQueryToExcelTable(ByRef db As DAO.Database, ByRef ws As Obje
         Err.Clear: Exit Sub
     End If
     
-    ' 2. ターゲットテーブルの確認
     Set lo = ws.ListObjects(tblName)
     If lo Is Nothing Then
         Debug.Print "      [!!] Excelテーブルが見つかりません: " & tblName
@@ -177,10 +175,8 @@ Private Sub TransferQueryToExcelTable(ByRef db As DAO.Database, ByRef ws As Obje
     End If
     On Error GoTo 0
     
-    ' 3. テーブルの初期化
     Call ClearListObject_LeaveOneRow(ws, tblName)
     
-    ' 4. データの書き込み
     If Not rs.EOF Then
         rs.MoveLast: rowCount = rs.recordCount: rs.MoveFirst
         Dim colCount As Long: colCount = rs.Fields.count
@@ -212,13 +208,10 @@ Private Sub ClearListObject_LeaveOneRow(ByRef ws As Object, ByVal tblName As Str
 End Sub
 
 '----------------------------------------------------------------
-' 関数名 : G_GetSheetByCodeName
-' 説明   : Workbook内をループし、CodeNameが一致するシートを返します。
+' 関数名 : G_GetSheetByCodeName (ハイブリッド検索)
 '----------------------------------------------------------------
 Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal nameOrCode As String) As Object
     Dim sh As Object
-    
-    ' 1. オブジェクト名 (CodeName) で一致するものを探す
     For Each sh In wb.Sheets
         If sh.CodeName = nameOrCode Then
             Set G_GetSheetByCodeName = sh
@@ -226,7 +219,6 @@ Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal nameOrCode As Str
         End If
     Next sh
     
-    ' 2. 見つからない場合はシートタブ名 (Name) で直接取得を試行
     On Error Resume Next
     Set G_GetSheetByCodeName = wb.Sheets(nameOrCode)
     On Error GoTo 0

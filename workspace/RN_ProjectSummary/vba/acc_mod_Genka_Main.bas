@@ -68,19 +68,19 @@ Private Function Import_Excel_To_Temp() As Boolean
     Set xlBook = xlApp.Workbooks.Open(xlPath, ReadOnly:=True)
     
     ' オブジェクト名（CodeName）でシートを特定
-    Set xlSheet = G_GetSheetByCodeName(xlBook, SH_CODE_EX_GENKA)
+    Set xlSheet = G_GetSheetByCodeName(xlBook, SH_CODE_IM_GENKA)
     
     ' 見つからない場合はシート名（見出し名）で再試行
     If xlSheet Is Nothing Then
         On Error Resume Next
-        Set xlSheet = xlBook.Sheets(SH_NAME_EX_GENKA)
+        Set xlSheet = xlBook.Sheets(SH_NAME_IM_GENKA)
         On Error GoTo Err_Handler
     End If
     
     If xlSheet Is Nothing Then
         MsgBox "対象シートが見つかりません。" & vbCrLf & _
-               "オブジェクト名: " & SH_CODE_EX_GENKA & vbCrLf & _
-               "シート名: " & SH_NAME_EX_GENKA, vbCritical
+               "オブジェクト名: " & SH_CODE_IM_GENKA & vbCrLf & _
+               "シート名: " & SH_NAME_IM_GENKA, vbCritical
         GoTo Exit_Sub
     End If
     

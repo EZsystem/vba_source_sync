@@ -1,0 +1,189 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "acc_clsExcelImporter"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+'=====================================
+' Class Module: acc_clsExcelImporter (EZsystem Refactored)
+' 説明　：Excel配列からAccessテーブルへの高速取込を提供するクラス
+' 更新日：2026/03/20 - プロパティ名の統一、列名正規化の実装
+'=====================================
+Option Compare Database
+Option Explicit
+
+' --- 内部保持変数 ---
+Private pDB               As DAO.Database
+Private pDictMapping      As Object ' タイトル -> フィールド名
+Private pColIndex         As Object ' タイトル -> 配列列番号
+Private pSkipConditions   As Object
+Private pDefaultValues    As Object
+
+' --- 公開変数（設定用） ---
+Public TargetTable     As String    ' 本番テーブル名（tableNameのエイリアス）
+Public TempTable       As String    ' 一時テーブル名（TempTableNameのエイリアス）
+Public TitleRow        As Long      ' タイトル行（初期値 1）
+Public DataStartRow    As Long      ' データ開始行（初期値 2）
+Public StartColumn     As Long      ' 開始列（初期値 1）
+Public ImportColumnMax As Long      ' 最大列数（0の場合は自動判定）
+
+' --- 以前のコードとの互換用プロパティ ---
+Public Property Let tableName(ByVal val As String): TargetTable = val: End Property
+Public Property Let TempTableName(ByVal val As String): TempTable = val: End Property
+
+'=================================================
+' サブルーチン名 : Init
+' 機能 : 各種辞書オブジェクトとDB接続を初期化する
+'=================================================
+Public Sub Init()
+    Set pDB = CurrentDb
+    Set pDictMapping = CreateObject("Scripting.Dictionary")
+    Set pColIndex = CreateObject("Scripting.Dictionary")
+    Set pSkipConditions = CreateObject("Scripting.Dictionary")
+    Set pDefaultValues = CreateObject("Scripting.Dictionary")
+    
+    ' デフォルト値設定
+    TitleRow = 1
+    DataStartRow = 2
+    StartColumn = 1
+End Sub
+
+'=================================================
+' プロパティ : MappingMode
+' 機能 : "タイトル一致" の場合、自動でマッピングを生成する
+'=================================================
+Public Property Let MappingMode(ByVal mode As String)
+    If mode = "タイトル一致" Then
+        Dim key As Variant
+        For Each key In pColIndex.Keys
+            pDictMapping(key) = key
+        Next key
+    End If
+End Property
+
+'=================================================
+' サブルーチン名 : PrepareFieldNames
+' 引数 : titleRowArr - タイトル行の2次元配列
+' 機能 : タイトルを正規化して列位置を記憶する（表記ゆれ対応）
+'=================================================
+Public Sub PrepareFieldNames(ByVal titleRowArr As Variant)
+    Dim i As Long
+    Dim rawTitle As String
+    Dim normTitle As String
+    
+    pColIndex.RemoveAll
+    
+    ' 配列の列数は UBound(titleRowArr, 2)
+    For i = 1 To UBound(titleRowArr, 2)
+        rawTitle = Nz(titleRowArr(1, i), "")
+        If rawTitle <> "" Then
+            ' EZsystem標準：正規化して登録
+            normTitle = Normalize_Text(rawTitle)
+            If Not pColIndex.Exists(normTitle) Then
+                pColIndex.Add normTitle, i
+            End If
+        End If
+    Next i
+End Sub
+
+'=================================================
+' サブルーチン名 : ImportFromArray
+' 引数 : dataArr - 取込対象の純粋なデータ配列
+' 機能 : 高速に Recordset へ流し込む
+'=================================================
+Public Sub ImportFromArray(ByVal dataArr As Variant)
+    Dim rs As DAO.Recordset
+    Dim r As Long
+    Dim titleKey As Variant
+    Dim targetField As String
+    Dim valCell As Variant
+    
+    If TempTable = "" Then Err.Raise 999, , "TempTableが指定されていません"
+    
+    Set rs = pDB.OpenRecordset(TempTable, dbOpenDynaset)
+    
+    On Error GoTo ErrLine
+    For r = 1 To UBound(dataArr, 1)
+        If Not ShouldSkip(dataArr, r) Then
+            rs.AddNew
+            ' マッピング定義されている列のみループ
+            For Each titleKey In pDictMapping.Keys
+                ' タイトルがExcel列に存在するか確認
+                If pColIndex.Exists(titleKey) Then
+                    targetField = pDictMapping(titleKey)
+                    valCell = dataArr(r, pColIndex(titleKey))
+                    
+                    ' 空白時のデフォルト値補完
+                    If (IsNull(valCell) Or valCell = "") Then
+                        If pDefaultValues.Exists(targetField) Then
+                            valCell = pDefaultValues(targetField)
+                        End If
+                    End If
+                    
+                    rs.Fields(targetField).value = valCell
+                End If
+            Next titleKey
+            rs.Update
+        End If
+    Next r
+    
+    rs.Close
+    Exit Sub
+
+ErrLine:
+    MsgBox "行 " & r & " の取込中にエラーが発生しました: " & Err.Description, vbCritical
+    If Not rs Is Nothing Then rs.Close
+End Sub
+
+'=================================================
+' 関数名 : ShouldSkip (内部用)
+'=================================================
+Private Function ShouldSkip(dataArr As Variant, r As Long) As Boolean
+    ' 必要に応じてスキップロジックを実装（現状は全件通す）
+    ShouldSkip = False
+End Function
+
+'=================================================
+' サブルーチン名 : CommitToMain
+' 機能 : 一時テーブルから本番テーブルへ一括追加
+'=================================================
+Public Sub CommitToMain()
+    If TargetTable = "" Or TempTable = "" Then Exit Sub
+    Dim sql As String
+    sql = "INSERT INTO [" & TargetTable & "] SELECT * FROM [" & TempTable & "];"
+    pDB.Execute sql, dbFailOnError
+End Sub
+
+'=================================================
+' サブルーチン名 : ImportFromWorksheet
+' 引数 : ws - Excelのワークシートオブジェクト
+'=================================================
+Public Sub ImportFromWorksheet(ByVal ws As Object)
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim titleArr As Variant
+    Dim dataArr As Variant
+    
+    ' 列数の自動判定
+    If ImportColumnMax = 0 Then
+        lastCol = ws.Cells(TitleRow, ws.Columns.Count).End(-4159).Column ' xlToLeft
+        ImportColumnMax = lastCol - StartColumn + 1
+    End If
+    
+    ' タイトル取得と解析
+    titleArr = ws.Range(ws.Cells(TitleRow, StartColumn), ws.Cells(TitleRow, StartColumn + ImportColumnMax - 1)).value
+    Call PrepareFieldNames(titleArr)
+    
+    ' 最終行取得
+    lastRow = ws.Cells(ws.rows.Count, StartColumn).End(-4162).Row ' xlUp
+    If lastRow < DataStartRow Then Exit Sub ' データなし
+    
+    ' データ一括取得
+    dataArr = ws.Range(ws.Cells(DataStartRow, StartColumn), ws.Cells(lastRow, StartColumn + ImportColumnMax - 1)).value
+    
+    ' 配列から取込
+    Call ImportFromArray(dataArr)
+End Sub

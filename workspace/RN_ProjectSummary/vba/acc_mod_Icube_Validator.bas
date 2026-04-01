@@ -218,7 +218,7 @@ Private Sub Process_DateConversion_Smart(ByRef cleaner As acc_clsDataCleaner)
                 
                 ' 通常ロジック (一件工事、または受注期の場合)
                 If Not isSmallHandled Then
-                    rs.Fields(Prfx(i) & "期").Value = GetFiscalYear(TDate) - BASE_YEAR + 1
+                    rs.Fields(Prfx(i) & "期").Value = GetFiscalYear(TDate) - BASE_YEAR
                 End If
                 
                 rs.Fields(Prfx(i) & "Q").Value = GetFiscalQuarter(TDate)

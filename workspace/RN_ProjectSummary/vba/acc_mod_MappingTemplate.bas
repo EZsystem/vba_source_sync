@@ -36,15 +36,20 @@ Public Const AT_PROJECT_INFO As String = "at_工事コード情報"
 Public Const AT_EDABAN As String = "at_枝番工事"
 Public Const AT_LINK_KIHON_NAME As String = "at_基本工事名称_リンク"
 
-' --- Excel Sheet CodeNames (不変のオブジェクト名) ---
-Public Const SH_CODE_VALUE_ENTRY   As String = "sh_ValueEntry"    ' 14期_計算入力
-Public Const SH_CODE_CALC_WORK     As String = "sh_CalcWork"      ' 中間計算ワーク
-Public Const SH_CODE_REPORT_OUT    As String = "sh_ReportOutput"  ' 管理表出力
-Public Const SH_CODE_EX_MASTER      As String = "sh_Ex_Master"     ' M_経費/組織 (旧: xt)
-Public Const SH_CODE_EX_ICUBE       As String = "sh_Ex_Icube"      ' Icubeデータ
-Public Const SH_CODE_EX_GENKA       As String = "CostMng1"         ' 原価データ (オブジェクト名)
-Public Const SH_NAME_EX_GENKA       As String = "原価S直データ"    ' 原価データ (シート見出し名)
-Public Const SH_CODE_EX_EMP         As String = "sh_EX_Emp"        ' 兼務率_給与人員 (旧: 兼務率2)
+' --- Excel Sheet CodeNames & Sheet Names (内部オブジェクト名と見出し名) ---
+Public Const SH_CODE_EX_MASTER      As String = "sh_Ex_Master"     ' 経費M (オブジェクト名)
+Public Const SH_NAME_EX_MASTER      As String = "経費M"            ' 経費M (シート名)
+
+Public Const SH_CODE_EX_ICUBE       As String = "sh_Ex_Icube"      ' IcubeData (オブジェクト名)
+Public Const SH_NAME_EX_ICUBE       As String = "IcubeData"        ' IcubeData (シート名)
+
+Public Const SH_CODE_EX_GENKA       As String = "sh_Ex_Genka"      ' 原価Data (エクスポート用オブジェクト名)
+Public Const SH_NAME_EX_GENKA       As String = "原価Data"         ' 原価Data (エクスポート用シート名)
+
+Public Const SH_CODE_IM_GENKA       As String = "CostMng1"         ' 原価システムimport (インポート用オブジェクト名)
+Public Const SH_NAME_IM_GENKA       As String = "原価S直データ"    ' 原価システムimport (インポート用シート名)
+
+Public Const SH_CODE_EX_EMP         As String = "sh_EX_Emp"        ' 兼務率2 (オブジェクト名)
 
 ' --- ツール管理・クエリ ---
 Public Const AT_MAPPING_INFO As String = "at_取込マッピング_Template"

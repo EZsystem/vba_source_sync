@@ -1,0 +1,130 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "com_clsErrorUtility"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+'=====================================
+' Class Module: com_clsErrorUtility
+' 説明　：エラーの収集・表示および既定値取得を提供するユーティリティ
+' 作成日：2025/04/25
+' 更新日：再生成 by そうじろう
+'=====================================
+Option Compare Database
+Option Explicit
+
+' --- 内部保持変数 ---
+Private pErrors    As Collection
+Private pDebugMode As Boolean
+
+'=================================================
+' サブルーチン名 : Initialize
+' 引数 : debugMode（省略可）- デバッグ出力の有無（初期値：True）
+' 機能 : エラー記録用のコレクションを初期化し、デバッグモードを設定するにゃ
+'=================================================
+Public Sub Initialize(Optional debugMode As Boolean = True)
+    Set pErrors = New Collection
+    pDebugMode = debugMode
+End Sub
+
+'=================================================
+' サブルーチン名 : LogError
+' 引数 : title - エラータイトル
+'        details - エラー詳細メッセージ
+' 機能 : エラー情報をログとしてコレクションに追加し、デバッグモード時は即時出力も行うにゃ
+'=================================================
+Public Sub LogError(title As String, details As String)
+    Dim msg As String
+    msg = "■■■ " & title & " (" & Now & ") ■■■" & vbCrLf & details
+    If pDebugMode Then Debug.Print msg
+    pErrors.Add msg
+End Sub
+
+'=================================================
+' サブルーチン名 : ShowAllErrors
+' 引数 : showInMsgBox（省略可）- MsgBoxで表示するかどうか
+' 機能 : 記録されたすべてのエラーログを一括表示（またはデバッグ出力）するにゃ
+'=================================================
+Public Sub ShowAllErrors(Optional showInMsgBox As Boolean = True)
+    Dim errMsg As String
+    Dim i As Long
+    If pErrors.Count = 0 Then
+        If showInMsgBox Then MsgBox "エラーはありません。", vbInformation
+        Exit Sub
+    End If
+    For i = 1 To pErrors.Count
+        errMsg = errMsg & pErrors(i) & vbCrLf
+    Next i
+    If showInMsgBox Then
+        MsgBox errMsg, vbExclamation, "エラー一覧"
+    Else
+        Debug.Print errMsg
+    End If
+End Sub
+
+'=================================================
+' プロパティ名 : Get ErrorCount
+' 機能 : 記録されているエラーの件数を返すにゃ
+'=================================================
+Public Property Get ErrorCount() As Long
+    ErrorCount = pErrors.Count
+End Property
+
+'=================================================
+' 関数名 : GetDefaultValue
+' 引数 : fieldType - フィールド型（DAO定数）
+'        value - 入力値（Variant）
+' 戻り値 : 適切な初期値（型別）
+' 機能 : フィールド型と値の内容に応じて、適切な初期値を返すにゃ
+'        NULLや不正な数値などを補完する安全対策用関数にゃ
+'=================================================
+Public Function GetDefaultValue(fieldType As Integer, value As Variant) As Variant
+    On Error Resume Next
+    Select Case fieldType
+        Case dbText, dbMemo
+            If IsNull(value) Or value = "" Then
+                GetDefaultValue = "N/A"
+            Else
+                GetDefaultValue = value
+            End If
+        Case dbInteger, dbLong, dbByte
+            If IsNull(value) Or Not IsNumeric(value) Then
+                GetDefaultValue = 0
+            ElseIf CDbl(value) < -2147483648# Or CDbl(value) > 2147483647# Then
+                GetDefaultValue = 0
+            Else
+                GetDefaultValue = CLng(value)
+            End If
+        Case dbBigInt
+            If IsNull(value) Or Not IsNumeric(value) Then
+                GetDefaultValue = 0
+            Else
+                GetDefaultValue = CDec(value)
+            End If
+        Case dbDouble, dbSingle, dbCurrency
+            If IsNull(value) Or Not IsNumeric(value) Then
+                GetDefaultValue = 0
+            Else
+                GetDefaultValue = CDbl(value)
+            End If
+        Case dbDate
+            If IsNull(value) Then
+                GetDefaultValue = #1/1/1910#
+            Else
+                GetDefaultValue = value
+            End If
+        Case dbBoolean
+            If IsNull(value) Then
+                GetDefaultValue = False
+            Else
+                GetDefaultValue = CBool(value)
+            End If
+        Case Else
+            GetDefaultValue = Null
+    End Select
+    On Error GoTo 0
+End Function
+
