@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "acc_mod_LogHelper"
+Attribute VB_Name = "acc_mod_LogHelper"
 'Attribute VB_Name = "acc_mod_LogHelper"
 Option Compare Database
 Option Explicit

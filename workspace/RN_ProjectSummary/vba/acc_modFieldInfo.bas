@@ -1,26 +1,26 @@
-ï»¿Attribute VB_Name = "acc_modFieldInfo"
+Attribute VB_Name = "acc_modFieldInfo"
 '-------------------------------------
 ' Module: acc_modFieldInfo
-' èª¬æ˜   : ãƒ†ãƒ¼ãƒ–ãƒ«åæŒ‡å®šã«ã‚ˆã‚‹ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰æƒ…å ±è¡¨ç¤ºãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£
-' ä½œæˆæ—¥ : 2025/05/23
-' æ›´æ–°æ—¥ : -
+' à–¾   : ƒe[ƒuƒ‹–¼w’è‚É‚æ‚éƒtƒB[ƒ‹ƒhî•ñ•\¦ƒ†[ƒeƒBƒŠƒeƒB
+' ì¬“ú : 2025/05/23
+' XV“ú : -
 '-------------------------------------
 Option Compare Database
 Option Explicit
 
 '=================================================
-' ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³å : Show_FieldInfo_FromList
-' èª¬æ˜   : ãƒ†ãƒ¼ãƒ–ãƒ«ä¸€è¦§ã‹ã‚‰é¸æŠã—ãŸãƒ†ãƒ¼ãƒ–ãƒ«ã®
-'          ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰æƒ…å ±ã‚’ãƒ‡ãƒãƒƒã‚°å‡ºåŠ›ã™ã‚‹
-' å¼•æ•°   : ãªã—
-' æˆ»ã‚Šå€¤ : ãªã—
+' ƒTƒuƒ‹[ƒ`ƒ“–¼ : Show_FieldInfo_FromList
+' à–¾   : ƒe[ƒuƒ‹ˆê——‚©‚ç‘I‘ğ‚µ‚½ƒe[ƒuƒ‹‚Ì
+'          ƒtƒB[ƒ‹ƒhî•ñ‚ğƒfƒoƒbƒOo—Í‚·‚é
+' ˆø”   : ‚È‚µ
+' –ß‚è’l : ‚È‚µ
 '=================================================
 Public Sub Show_FieldInfo_FromList()
-    ' --- 1. DAO.Database å–å¾— ---
+    ' --- 1. DAO.Database æ“¾ ---
     Dim db As DAO.Database
     Set db = CurrentDb
     
-    ' --- 2. ãƒ†ãƒ¼ãƒ–ãƒ«ä¸€è¦§å–å¾— ---
+    ' --- 2. ƒe[ƒuƒ‹ˆê——æ“¾ ---
     Dim td As DAO.TableDef
     Dim tableList As String
     For Each td In db.TableDefs
@@ -29,45 +29,45 @@ Public Sub Show_FieldInfo_FromList()
         End If
     Next td
     If tableList = "" Then
-        MsgBox "è¡¨ç¤ºå¯èƒ½ãªãƒ†ãƒ¼ãƒ–ãƒ«ãŒã‚ã‚Šã¾ã›ã‚“", vbExclamation
+        MsgBox "•\¦‰Â”\‚Èƒe[ƒuƒ‹‚ª‚ ‚è‚Ü‚¹‚ñ", vbExclamation
         Exit Sub
     End If
     
-    ' --- 3. é…åˆ—åŒ– ---
+    ' --- 3. ”z—ñ‰» ---
     Dim tableArray() As String
     tableArray = Split(Left(tableList, Len(tableList) - 1), ";")
     
-    ' --- 4. ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠ ---
+    ' --- 4. ƒe[ƒuƒ‹‘I‘ğ ---
     Dim selectedTable As Variant
-    selectedTable = Get_ListChoice("ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’é¸æŠã—ã¦ãã ã•ã„", "ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠ", tableArray)
+    selectedTable = Get_ListChoice("ƒe[ƒuƒ‹‚ğ‘I‘ğ‚µ‚Ä‚­‚¾‚³‚¢", "ƒe[ƒuƒ‹‘I‘ğ", tableArray)
     If selectedTable = "" Then
-        MsgBox "å‡¦ç†ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã—ã¾ã—ãŸ", vbInformation
+        MsgBox "ˆ—‚ğƒLƒƒƒ“ƒZƒ‹‚µ‚Ü‚µ‚½", vbInformation
         Exit Sub
     End If
     
-    ' --- 5. ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰æƒ…å ±è¡¨ç¤º ---
+    ' --- 5. ƒtƒB[ƒ‹ƒhî•ñ•\¦ ---
     Display_FieldInfo CStr(selectedTable)
-End Sub ' â† Show_FieldInfo_FromList çµ‚äº†
+End Sub ' © Show_FieldInfo_FromList I—¹
 
 '=================================================
-' é–¢æ•°å : Get_ListChoice
-' èª¬æ˜   : é …ç›®ä¸€è¦§ã‹ã‚‰ç•ªå·å…¥åŠ›ã«ã‚ˆã‚Šé¸æŠè‚¢ã‚’è¿”ã™
-' å¼•æ•°   : promptï¼ˆStringï¼‰ ãƒ—ãƒ­ãƒ³ãƒ—ãƒˆæ–‡è¨€
-'        : titleï¼ˆStringï¼‰   å…¥åŠ›ãƒœãƒƒã‚¯ã‚¹ã‚¿ã‚¤ãƒˆãƒ«
-'        : itemListï¼ˆVariant é…åˆ—ï¼‰ é¸æŠé …ç›®ãƒªã‚¹ãƒˆ
-' æˆ»ã‚Šå€¤ : Variant é¸æŠé …ç›®ã¾ãŸã¯ç©ºæ–‡å­—
+' ŠÖ”–¼ : Get_ListChoice
+' à–¾   : €–Úˆê——‚©‚ç”Ô†“ü—Í‚É‚æ‚è‘I‘ğˆ‚ğ•Ô‚·
+' ˆø”   : promptiStringj ƒvƒƒ“ƒvƒg•¶Œ¾
+'        : titleiStringj   “ü—Íƒ{ƒbƒNƒXƒ^ƒCƒgƒ‹
+'        : itemListiVariant ”z—ñj ‘I‘ğ€–ÚƒŠƒXƒg
+' –ß‚è’l : Variant ‘I‘ğ€–Ú‚Ü‚½‚Í‹ó•¶š
 '=================================================
 Private Function Get_ListChoice(prompt As String, title As String, itemList As Variant) As Variant
-    ' --- 1. ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸çµ„ç«‹ ---
+    ' --- 1. ƒƒbƒZ[ƒW‘g—§ ---
     Dim i As Long
     Dim msg As String
     msg = prompt & vbCrLf & vbCrLf
     For i = LBound(itemList) To UBound(itemList)
         msg = msg & (i + 1) & ". " & itemList(i) & vbCrLf
     Next i
-    msg = msg & vbCrLf & "ç•ªå·ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ : "
+    msg = msg & vbCrLf & "”Ô†‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢ : "
     
-    ' --- 2. ãƒ¦ãƒ¼ã‚¶ãƒ¼å…¥åŠ› & æ¤œè¨¼ ---
+    ' --- 2. ƒ†[ƒU[“ü—Í & ŒŸØ ---
     Dim resp As Variant
     resp = InputBox(msg, title)
     If IsNumeric(resp) Then
@@ -75,62 +75,62 @@ Private Function Get_ListChoice(prompt As String, title As String, itemList As V
             Get_ListChoice = itemList(resp - 1)
         End If
     End If
-    ' ç©ºæ–‡å­—ã®å ´åˆã¯ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã¨ã¿ãªã™
-End Function ' â† Get_ListChoice çµ‚äº†
+    ' ‹ó•¶š‚Ìê‡‚ÍƒLƒƒƒ“ƒZƒ‹‚Æ‚İ‚È‚·
+End Function ' © Get_ListChoice I—¹
 
 '=================================================
-' ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³å : Display_FieldInfo
-' èª¬æ˜   : æŒ‡å®šãƒ†ãƒ¼ãƒ–ãƒ«ã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰åã¨å‹ã‚’
-'          ãƒ‡ãƒãƒƒã‚°ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã«å‡ºåŠ›ã™ã‚‹
-' å¼•æ•°   : tableNameï¼ˆStringï¼‰ ãƒ†ãƒ¼ãƒ–ãƒ«å
-' æˆ»ã‚Šå€¤ : ãªã—
+' ƒTƒuƒ‹[ƒ`ƒ“–¼ : Display_FieldInfo
+' à–¾   : w’èƒe[ƒuƒ‹‚ÌƒtƒB[ƒ‹ƒh–¼‚ÆŒ^‚ğ
+'          ƒfƒoƒbƒOƒEƒBƒ“ƒhƒE‚Éo—Í‚·‚é
+' ˆø”   : tableNameiStringj ƒe[ƒuƒ‹–¼
+' –ß‚è’l : ‚È‚µ
 '=================================================
 Public Sub Display_FieldInfo(tableName As String)
-    ' --- 1. DAO.Database å–å¾— ---
+    ' --- 1. DAO.Database æ“¾ ---
     Dim db As DAO.Database
     Set db = CurrentDb
     
-    ' --- 2. ãƒ†ãƒ¼ãƒ–ãƒ«å­˜åœ¨ç¢ºèª ---
+    ' --- 2. ƒe[ƒuƒ‹‘¶İŠm”F ---
     On Error Resume Next
     Dim tdef As DAO.TableDef
     Set tdef = db.TableDefs(tableName)
     On Error GoTo 0
     If tdef Is Nothing Then
-        MsgBox "ãƒ†ãƒ¼ãƒ–ãƒ«ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“ : " & tableName, vbExclamation
+        MsgBox "ƒe[ƒuƒ‹‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ : " & tableName, vbExclamation
         Exit Sub
     End If
     
-    ' --- 3. ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰æƒ…å ±å‡ºåŠ› ---
+    ' --- 3. ƒtƒB[ƒ‹ƒhî•ño—Í ---
     Dim fld As DAO.Field
-    Debug.Print "ã€ãƒ†ãƒ¼ãƒ–ãƒ«åã€‘ " & tableName
+    Debug.Print "yƒe[ƒuƒ‹–¼z " & tableName
     Debug.Print String(30, "-")
     For Each fld In tdef.Fields
         Debug.Print fld.Name & " : " & GetFieldTypeName(fld.Type)
     Next fld
     Debug.Print String(30, "-")
     Debug.Print ""
-End Sub ' â† Display_FieldInfo çµ‚äº†
+End Sub ' © Display_FieldInfo I—¹
 
 '=================================================
-' é–¢æ•°å : GetFieldTypeName
-' èª¬æ˜   : DAO.Field.Type å®šæ•°ã‹ã‚‰æ—¥æœ¬èªå‹åã‚’è¿”ã™
-' å¼•æ•°   : fieldTypeï¼ˆIntegerï¼‰ DAO.Field.Type
-' æˆ»ã‚Šå€¤ : String å‹åç§°
+' ŠÖ”–¼ : GetFieldTypeName
+' à–¾   : DAO.Field.Type ’è”‚©‚ç“ú–{ŒêŒ^–¼‚ğ•Ô‚·
+' ˆø”   : fieldTypeiIntegerj DAO.Field.Type
+' –ß‚è’l : String Œ^–¼Ì
 '=================================================
 Private Function GetFieldTypeName(fieldType As Integer) As String
     Select Case fieldType
-        Case dbBoolean:  GetFieldTypeName = "Yes/Noå‹"
-        Case dbByte:     GetFieldTypeName = "ãƒã‚¤ãƒˆå‹"
-        Case dbInteger:  GetFieldTypeName = "æ•´æ•°å‹"
-        Case dbLong:     GetFieldTypeName = "é•·æ•´æ•°å‹"
-        Case dbSingle:   GetFieldTypeName = "å˜ç²¾åº¦å‹"
-        Case dbDouble:   GetFieldTypeName = "å€ç²¾åº¦å‹"
-        Case dbCurrency: GetFieldTypeName = "é€šè²¨å‹"
-        Case dbDate:     GetFieldTypeName = "æ—¥ä»˜/æ™‚åˆ»å‹"
-        Case dbText:     GetFieldTypeName = "ãƒ†ã‚­ã‚¹ãƒˆå‹"
-        Case dbMemo:     GetFieldTypeName = "ãƒ¡ãƒ¢å‹"
-        Case dbGUID:     GetFieldTypeName = "GUIDå‹"
-        Case Else:       GetFieldTypeName = "ä¸æ˜å‹(" & fieldType & ")"
+        Case dbBoolean:  GetFieldTypeName = "Yes/NoŒ^"
+        Case dbByte:     GetFieldTypeName = "ƒoƒCƒgŒ^"
+        Case dbInteger:  GetFieldTypeName = "®”Œ^"
+        Case dbLong:     GetFieldTypeName = "’·®”Œ^"
+        Case dbSingle:   GetFieldTypeName = "’P¸“xŒ^"
+        Case dbDouble:   GetFieldTypeName = "”{¸“xŒ^"
+        Case dbCurrency: GetFieldTypeName = "’Ê‰İŒ^"
+        Case dbDate:     GetFieldTypeName = "“ú•t/Œ^"
+        Case dbText:     GetFieldTypeName = "ƒeƒLƒXƒgŒ^"
+        Case dbMemo:     GetFieldTypeName = "ƒƒ‚Œ^"
+        Case dbGUID:     GetFieldTypeName = "GUIDŒ^"
+        Case Else:       GetFieldTypeName = "•s–¾Œ^(" & fieldType & ")"
     End Select
-End Function ' â† GetFieldTypeName çµ‚äº†
+End Function ' © GetFieldTypeName I—¹
 

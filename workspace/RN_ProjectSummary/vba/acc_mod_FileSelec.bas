@@ -1,4 +1,4 @@
-ï»¿Attribute VB_Name = "mod_FileSelec"
+Attribute VB_Name = "mod_FileSelec"
 '~~~~~~~~~~~~~~ mod_FileSelec ~~~~~~~~~~~~~~
 Option Compare Database
 Option Explicit
@@ -12,9 +12,9 @@ Public Function SelectExcelFileXLSX() As String
 
     Set fd = Application.FileDialog(msoFileDialogFilePicker)
     With fd
-        .title = "Excelãƒ•ã‚¡ã‚¤ãƒ«(xlsx)ã‚’é¸æŠã—ã¦ãã ã•ã„"
+        .title = "Excelƒtƒ@ƒCƒ‹(xlsx)‚ğ‘I‘ğ‚µ‚Ä‚­‚¾‚³‚¢"
         .Filters.Clear
-        ' æ‹¡å¼µå­ xlsx ã®ã¿è¨±å¯
+        ' Šg’£q xlsx ‚Ì‚İ‹–‰Â
         .Filters.Add "Excel(xlsx)", "*.xlsx"
         .AllowMultiSelect = False
         
@@ -29,8 +29,8 @@ Public Function SelectExcelFileXLSX() As String
     Exit Function
     
 ErrHandle:
-    Debug.Print "SelectExcelFileXLSXã§ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿ: " & Err.Description
-    MsgBox "ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿ:" & vbCrLf & Err.Description, vbExclamation
+    Debug.Print "SelectExcelFileXLSX‚ÅƒGƒ‰[”­¶: " & Err.Description
+    MsgBox "ƒGƒ‰[”­¶:" & vbCrLf & Err.Description, vbExclamation
     SelectExcelFileXLSX = ""
 End Function
 
