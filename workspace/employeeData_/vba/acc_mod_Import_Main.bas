@@ -144,6 +144,13 @@ End Sub
 Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
     Dim rsSrc As DAO.Recordset
     Dim rsTgt As DAO.Recordset
+    Dim arrMap As Variant
+    Dim objOrg As Object
+    Dim m      As Long
+    
+    ' 仮基本工事マッピングおよび組織マッピングを事前にロード
+    arrMap = Get_TempProject_Map()
+    Set objOrg = Get_Org_Dict()
     
     ' 本番テーブルをクリア
     db.Execute "DELETE * FROM [" & AT_KENMU_MAIN & "];", dbFailOnError
@@ -164,7 +171,17 @@ Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
             rsTgt!ImportID = rsSrc!ImportID
             
             rsTgt!元ファイルパス = rsSrc!元ファイルパス
-            rsTgt!作業所名 = rsSrc!作業所名
+            
+            ' 作業所名の正規化（略称から正式組織名に置換）
+            Dim sWorksite As String: sWorksite = Nz(rsSrc!作業所名, "")
+            Dim sOrgKey   As String: sOrgKey = StrConv(sWorksite, vbNarrow)
+            
+            If objOrg.Exists(sOrgKey) Then
+                rsTgt!作業所名 = objOrg(sOrgKey)
+            Else
+                rsTgt!作業所名 = sWorksite
+            End If
+            
             rsTgt!No = rsSrc!No
             rsTgt!工事コード = rsSrc!工事コード
             rsTgt!工事名 = rsSrc!工事名
@@ -175,10 +192,30 @@ Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
             Dim dtFinal As Variant
             dtFinal = Cleanse_Date_Smart(rsSrc!年月)
             rsTgt!年月 = dtFinal
-            
-            ' 期・Q の自動計算（新規追加）
             rsTgt!期 = Get_FiscalTerm(dtFinal)
             rsTgt!Q = Get_Quarter(dtFinal)
+            
+            ' 仮基本工事コードの紐付け（ワイルドカード考慮）
+            Dim projectName As String
+            Dim tempCode    As String: tempCode = ""
+            projectName = Nz(rsSrc!工事名, "")
+            
+            If IsArray(arrMap) Then
+                For m = 0 To UBound(arrMap, 1)
+                    ' arrMap(m, 0) には既に "？" -> "?" 変換済みのパターンが入っている
+                    If projectName Like arrMap(m, 0) Then
+                        tempCode = arrMap(m, 1)
+                        Exit For
+                    End If
+                Next m
+            End If
+            
+            ' マッチした場合はそのコード、しない場合は元の工事コードをセット
+            If tempCode <> "" Then
+                rsTgt!仮基本工事コード = tempCode
+            Else
+                rsTgt!仮基本工事コード = rsSrc!工事コード
+            End If
             
             rsTgt!兼務率割合 = dblRate
             

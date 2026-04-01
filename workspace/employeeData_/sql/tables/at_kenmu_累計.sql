@@ -11,5 +11,6 @@ CREATE TABLE [at_kenmu_累計] (
     [元ファイルパス] TEXT,
     [期] TEXT,
     [Q] TEXT,
+    [仮基本工事コード] TEXT,
     CONSTRAINT PK_at_kenmu_累計 PRIMARY KEY ([ImportID])
 );

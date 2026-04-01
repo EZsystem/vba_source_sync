@@ -1,4 +1,4 @@
-CREATE TABLE [at_仮基本工事] (
+CREATE TABLE [_at_仮基本工事] (
     [仮基本工事コード] TEXT,
     [仮基本工事名称] TEXT,
     [施工管轄組織名] TEXT,
@@ -8,5 +8,5 @@ CREATE TABLE [at_仮基本工事] (
     [基本工事名_官民] TEXT,
     [基本工事名_繰越] TEXT,
     [仮基本工事略名] TEXT,
-    CONSTRAINT PK_at_仮基本工事 PRIMARY KEY ([仮基本工事コード])
+    CONSTRAINT PK__at_仮基本工事 PRIMARY KEY ([仮基本工事コード])
 );
