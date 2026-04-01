@@ -51,11 +51,11 @@ End Sub
 Public Sub ShowAllErrors(Optional showInMsgBox As Boolean = True)
     Dim errMsg As String
     Dim i As Long
-    If pErrors.Count = 0 Then
+    If pErrors.count = 0 Then
         If showInMsgBox Then MsgBox "エラーはありません。", vbInformation
         Exit Sub
     End If
-    For i = 1 To pErrors.Count
+    For i = 1 To pErrors.count
         errMsg = errMsg & pErrors(i) & vbCrLf
     Next i
     If showInMsgBox Then
@@ -70,7 +70,7 @@ End Sub
 ' 機能 : 記録されているエラーの件数を返すにゃ
 '=================================================
 Public Property Get ErrorCount() As Long
-    ErrorCount = pErrors.Count
+    ErrorCount = pErrors.count
 End Property
 
 '=================================================

@@ -106,7 +106,7 @@ Public Sub Process_Kenmu_Data_Custom(ByRef lo As Object, ByVal worksiteName As S
     Set rs = db.OpenRecordset(TARGET_TABLE, dbOpenDynaset)
     
     For r = 1 To UBound(dataArr, 1)
-        For c = 1 To lo.ListColumns.Count
+        For c = 1 To lo.ListColumns.count
             colName = lo.ListColumns(c).Name
             normCol = Normalize_Text(colName)
             

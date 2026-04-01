@@ -169,7 +169,7 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
     
     ' 列数の自動判定
     If ImportColumnMax = 0 Then
-        lastCol = ws.Cells(TitleRow, ws.Columns.Count).End(-4159).Column ' xlToLeft
+        lastCol = ws.Cells(TitleRow, ws.Columns.count).End(-4159).Column ' xlToLeft
         ImportColumnMax = lastCol - StartColumn + 1
     End If
     
@@ -178,7 +178,7 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
     Call PrepareFieldNames(titleArr)
     
     ' 最終行取得
-    lastRow = ws.Cells(ws.rows.Count, StartColumn).End(-4162).Row ' xlUp
+    lastRow = ws.Cells(ws.rows.count, StartColumn).End(-4162).Row ' xlUp
     If lastRow < DataStartRow Then Exit Sub ' データなし
     
     ' データ一括取得

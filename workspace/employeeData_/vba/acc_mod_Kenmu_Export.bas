@@ -58,9 +58,9 @@ Public Sub Export_Sum_To_Excel()
                     ' --- A. テーブルのクリア（1行残し） ---
                     ' DataBodyRangeがある場合のみ処理
                     If Not lo.DataBodyRange Is Nothing Then
-                        If lo.ListRows.Count > 1 Then
+                        If lo.ListRows.count > 1 Then
                             ' 2行目以降を削除
-                            lo.DataBodyRange.Offset(1, 0).Resize(lo.ListRows.Count - 1).Delete
+                            lo.DataBodyRange.Offset(1, 0).Resize(lo.ListRows.count - 1).Delete
                         End If
                         ' 1行目の内容をクリア（書式や数式維持のためDeleteではなくClearContents）
                         lo.DataBodyRange.rows(1).ClearContents

@@ -96,7 +96,7 @@ Public Sub Fast_Mode_Toggle(ByVal isOn As Boolean, Optional ByVal targetExcelApp
         On Error Resume Next
         targetExcelApp.ScreenUpdating = Not isOn
         targetExcelApp.EnableEvents = Not isOn
-        If targetExcelApp.Workbooks.Count > 0 Then
+        If targetExcelApp.Workbooks.count > 0 Then
             targetExcelApp.Calculation = IIf(isOn, -4135, -4105) ' xlManual / xlAutomatic
         End If
         On Error GoTo 0
