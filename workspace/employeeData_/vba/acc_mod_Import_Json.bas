@@ -1,78 +1,91 @@
 Attribute VB_Name = "acc_mod_Import_Json"
-Public Function ImportJsonProcess()
-    Dim filePath As String
-    Dim fso As Object
-    Dim ts As Object
-    Dim rawText As String
-    Dim db As DAO.Database
-    Dim rows() As String
-    Dim i As Long
+Option Explicit
+
+'----------------------------------------------------------------
+' Module: acc_mod_Import_Json
+' 説明   : VBA-JSON (JsonConverter) を使用した社員情報のインポート
+'----------------------------------------------------------------
+
+Private Const TARGET_TABLE As String = "at_testTemp"
+
+'----------------------------------------------------------------
+' 関数名 : ImportJsonProcess
+' 概要   : JSONファイルを解析し、テーブルへ取り込む
+'----------------------------------------------------------------
+Public Function ImportJsonProcess(Optional ByVal callingID As Long = 0)
+    Dim db          As DAO.Database: Set db = CurrentDb
+    Dim rsConfig    As DAO.Recordset
+    Dim fso         As Object
+    Dim ts          As Object
+    Dim rawText     As String
+    Dim json        As Object
+    Dim item        As Object
+    Dim filePath    As String
     Dim recordCount As Long
     
-    filePath = "D:\My_code\11_workspaces\RN_kanri_system\kenmu_system\data_to_access.json"
-    Set fso = CreateObject("Scripting.FileSystemObject")
+    On Error GoTo Err_Handler
     
-    ' --- 経過表示1：ファイル確認 ---
+    ' 1. レジストリからパス取得 (IDまたは名称)
+    Dim strSQL As String
+    If callingID > 0 Then
+        strSQL = "SELECT [既定パス] FROM [_at_SystemRegistry] WHERE [ID] = " & callingID
+    Else
+        strSQL = "SELECT [既定パス] FROM [_at_SystemRegistry] WHERE [処理名称] = '社員情報JSONインポート'"
+    End If
+    
+    Set rsConfig = db.OpenRecordset(strSQL, dbOpenSnapshot)
+    If rsConfig.EOF Then
+        MsgBox "JSONインポートの設定がレジストリに見つかりません。" & vbCrLf & _
+               "ID: " & callingID, vbCritical
+        Exit Function
+    End If
+    filePath = Nz(rsConfig![既定パス], ""): rsConfig.Close
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
     If Not fso.FileExists(filePath) Then
-        MsgBox "JSONファイルが見つかりません: " & filePath
+        MsgBox "JSONファイルが見つかりません: " & filePath, vbCritical
         Exit Function
     End If
 
-    ' 1. JSON読み込み
+    ' 2. JSON読み込み
     Set ts = fso.OpenTextFile(filePath, 1, False)
     rawText = ts.ReadAll
     ts.Close
 
-    ' --- 経過表示2：読み込んだ文字数を確認 ---
-    If MsgBox("JSONを読み込みました。文字数: " & Len(rawText) & " 文字。中身を表示しますか？", vbYesNo) = vbYes Then
-        MsgBox Left(rawText, 500) ' 最初の500文字を表示
-    End If
-
-    ' 2. テーブルクリア
-    Set db = CurrentDb
-    db.Execute "DELETE * FROM at_testTemp;"
-    Debug.Print "テーブルをクリアしました。"
-
-    ' 3. 解析とインポート
-    rows = Split(rawText, "}")
-    recordCount = 0
+    ' 3. JsonConverterによる解析
+    ' ※ 参照設定または acc_mod_JsonConverter.bas が必要
+    Set json = JsonConverter.ParseJson(rawText)
     
-    ' ※エラーを隠さないために On Error Resume Next は使いません
-    For i = LBound(rows) To UBound(rows) - 1
-        Dim val_no As String
-        val_no = GetJsonKeyValue(rows(i), "社員番号")
-        
-        If val_no <> "" Then
-            Dim sql As String
-            sql = "INSERT INTO at_testTemp (社員番号, 氏名_戸籍上, 氏名カナ, 氏名_ﾒｰﾙ表示用, 資格, 所属, 役職, 対外呼称) " & _
-                  "VALUES ('" & val_no & "', '" & _
-                  GetJsonKeyValue(rows(i), "氏名_戸籍上") & "', '" & _
-                  GetJsonKeyValue(rows(i), "氏名カナ") & "', '" & _
-                  GetJsonKeyValue(rows(i), "氏名_ﾒｰﾙ表示用") & "', '" & _
-                  GetJsonKeyValue(rows(i), "資格") & "', '" & _
-                  GetJsonKeyValue(rows(i), "所属") & "', '" & _
-                  GetJsonKeyValue(rows(i), "役職") & "', '" & _
-                  GetJsonKeyValue(rows(i), "対外呼称") & "');"
-            
-            db.Execute sql
-            recordCount = recordCount + 1
-        End If
-    Next i
+    ' 4. テーブルクリア
+    db.Execute "DELETE * FROM " & TARGET_TABLE & ";", dbFailOnError
 
-    ' --- 経過表示3：最終結果 ---
-    MsgBox "処理終了。インポート件数: " & recordCount & " 件"
+    ' 5. インポート実行 (トランザクション)
+    DBEngine.BeginTrans
     
-    ' テストのため DoCmd.Quit はコメントアウト（手動で閉じてください）
-    ' DoCmd.Quit
-End Function
+    ' json が Collection (Array) の場合を想定
+    For Each item In json
+        Dim sql As String
+        ' item(Key) で値を取得。存在しないキーはエラーにならず Null/Empty を返します
+        sql = "INSERT INTO " & TARGET_TABLE & " (社員番号, 氏名_戸籍上, 氏名カナ, 氏名_ﾒｰﾙ表示用, 資格, 所属, 役職, 対外呼称) " & _
+              "VALUES ('" & item("社員番号") & "', '" & _
+                            item("氏名_戸籍上") & "', '" & _
+                            item("氏名カナ") & "', '" & _
+                            item("氏名_ﾒｰﾙ表示用") & "', '" & _
+                            item("資格") & "', '" & _
+                            item("所属") & "', '" & _
+                            item("役職") & "', '" & _
+                            item("対外呼称") & "');"
+        db.Execute sql, dbFailOnError
+        recordCount = recordCount + 1
+    Next item
 
-Private Function GetJsonKeyValue(ByVal txt As String, ByVal key As String) As String
-    Dim s As String
-    On Error GoTo ErrHand
-    s = Split(txt, """" & key & """: """)(1)
-    GetJsonKeyValue = Split(s, """")(0)
+    DBEngine.CommitTrans
+    
+    MsgBox "JSONインポート処理が完了しました。件数: " & recordCount & " 件", vbInformation
     Exit Function
-ErrHand:
-    GetJsonKeyValue = ""
-End Function
 
+Err_Handler:
+    On Error Resume Next
+    DBEngine.Rollback
+    MsgBox "JSONインポート中にエラーが発生しました:" & vbCrLf & Err.Description, vbCritical
+End Function

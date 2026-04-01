@@ -169,7 +169,7 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
     
     ' 列数の自動判定
     If ImportColumnMax = 0 Then
-        lastCol = ws.Cells(TitleRow, ws.Columns.count).End(-4159).Column ' xlToLeft
+        lastCol = ws.Cells(TitleRow, ws.Columns.Count).End(-4159).Column ' xlToLeft
         ImportColumnMax = lastCol - StartColumn + 1
     End If
     
@@ -178,7 +178,7 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
     Call PrepareFieldNames(titleArr)
     
     ' 最終行取得
-    lastRow = ws.Cells(ws.rows.count, StartColumn).End(-4162).Row ' xlUp
+    lastRow = ws.Cells(ws.rows.Count, StartColumn).End(-4162).Row ' xlUp
     If lastRow < DataStartRow Then Exit Sub ' データなし
     
     ' データ一括取得
@@ -186,4 +186,76 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
     
     ' 配列から取込
     Call ImportFromArray(dataArr)
+End Sub
+
+'=================================================
+' サブルーチン名 : ImportUnpivotedData (New!)
+' 引数 : lo - ListObject
+'        worksiteName - 作業所名（固定値として追加）
+'        sourcePath - 元ファイルパス（固定値として追加）
+' 機能 : 横持ちデータを縦持ちに変換しながら高速インポート
+'=================================================
+Public Sub ImportUnpivotedData( _
+    ByVal lo As Object, _
+    ByVal worksiteName As String, _
+    ByVal sourcePath As String)
+    
+    Dim rs      As DAO.Recordset
+    Dim dataArr As Variant
+    Dim r As Long, c As Long
+    Dim colName As String
+    Dim colNorm As String
+    
+    ' 固定列のインデックス取得（Normalize_Textを使用）
+    Dim idxNo As Long:    idxNo = Get_ColumnIndex_Robust(lo, "No")
+    Dim idxYear As Long:  idxYear = Get_ColumnIndex_Robust(lo, "年月")
+    Dim idxCode As Long:  idxCode = Get_ColumnIndex_Robust(lo, "工事コード")
+    Dim idxName As Long:  idxName = Get_ColumnIndex_Robust(lo, "工事名")
+    Dim idxComm As Long:  idxComm = Get_ColumnIndex_Robust(lo, "コメント")
+    
+    If TempTable = "" Then Err.Raise 999, , "TempTableが指定されていません"
+    
+    dataArr = lo.DataBodyRange.value
+    Set rs = pDB.OpenRecordset(TempTable, dbOpenDynaset)
+    
+    For r = 1 To UBound(dataArr, 1)
+        For c = 1 To lo.ListColumns.Count
+            colName = lo.ListColumns(c).Name
+            colNorm = Normalize_Text(colName)
+            
+            ' メタデータ列や空名の列を除外
+            If InStr(colName, vbLf) = 0 And _
+               UCase(colNorm) <> "NO" And _
+               colNorm <> Normalize_Text("年月") And _
+               colNorm <> Normalize_Text("工事コード") And _
+               colNorm <> Normalize_Text("工事名") And _
+               colNorm <> Normalize_Text("コメント") And _
+               colName <> "" Then
+               
+                ' 値がある場合のみレコード作成
+                If Not IsEmpty(dataArr(r, c)) And dataArr(r, c) <> 0 Then
+                    rs.AddNew
+                    
+                    ' 固定情報
+                    rs!元ファイルパス = sourcePath
+                    rs!作業所名 = worksiteName
+                    
+                    ' 元データの固定マッピング
+                    If idxNo > 0 Then rs!No = dataArr(r, idxNo)
+                    If idxYear > 0 Then rs!年月 = dataArr(r, idxYear)
+                    If idxCode > 0 Then rs!工事コード = dataArr(r, idxCode)
+                    If idxName > 0 Then rs!工事名 = dataArr(r, idxName)
+                    If idxComm > 0 Then rs!コメント = dataArr(r, idxComm)
+                    
+                    ' 展開情報（社員名と割合）
+                    rs!社員名 = colName
+                    rs!兼務率割合 = dataArr(r, c)
+                    
+                    rs.Update
+                End If
+            End If
+        Next c
+    Next r
+    
+    rs.Close
 End Sub

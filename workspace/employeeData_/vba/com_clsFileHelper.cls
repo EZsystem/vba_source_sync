@@ -103,9 +103,9 @@ Public Function ShowFileDialog(ByVal title As String, ByVal filter As String) As
         If .Show = -1 Then
             ' 選択されたアイテムを配列に変換して返す
             Dim result() As Variant
-            ReDim result(1 To .SelectedItems.count)
+            ReDim result(1 To .SelectedItems.Count)
             Dim i As Long
-            For i = 1 To .SelectedItems.count
+            For i = 1 To .SelectedItems.Count
                 result(i) = .SelectedItems(i)
             Next i
             ShowFileDialog = result

@@ -1,15 +1,14 @@
 Attribute VB_Name = "acc_mod_VbaSync"
-'Attribute VB_Name = "acc_mod_VbaSync"
 Option Compare Database
 Option Explicit
 
 '================================================================
 ' Module: acc_mod_VbaSync
 ' 説明   : 外部フォルダから .bas / .cls ファイルを一括インポートする同期ツール
-' 更新日 : 2026/04/01 (快適版：削除時・保存時の確認を極力自動化)
+' 更新日 : 2026/04/01 (単独動作・引数指定対応版)
 '================================================================
 
-Public Sub Sync_Vba_Project()
+Public Sub Sync_Vba_Project(Optional ByVal idOrPath As Variant = 0)
     Dim db As DAO.Database: Set db = CurrentDb
     Dim rs As DAO.Recordset
     Dim fso As Object
@@ -21,10 +20,37 @@ Public Sub Sync_Vba_Project()
     On Error GoTo Err_Handler
     
     ' 1. パス取得
-    Set rs = db.OpenRecordset("SELECT [既定パス] FROM [_at_SystemRegistry] WHERE [処理名称] = 'VBAソースコード同期'", dbOpenSnapshot)
-    If rs.EOF Then MsgBox "システムレジストリの設定なし", vbCritical: Exit Sub
-    folderPath = Nz(rs![既定パス], ""): rs.Close
-    If folderPath = "" Then Exit Sub
+    If VarType(idOrPath) = vbString Then
+        ' 文字列が直接渡された場合
+        folderPath = Trim(idOrPath)
+    Else
+        ' 数値（ID）が渡された、または引数なしの場合
+        Dim callingID As Long: callingID = Nz(idOrPath, 0)
+        Dim strSQL As String
+        If callingID > 0 Then
+            strSQL = "SELECT [既定パス] FROM [_at_SystemRegistry] WHERE [ID] = " & callingID
+        Else
+            strSQL = "SELECT [既定パス] FROM [_at_SystemRegistry] WHERE [処理名称] = 'VBAソースコード同期'"
+        End If
+        
+        On Error Resume Next
+        Set rs = db.OpenRecordset(strSQL, dbOpenSnapshot)
+        If Not rs Is Nothing Then
+            If Not rs.EOF Then folderPath = Trim(Nz(rs![既定パス], ""))
+            rs.Close
+        End If
+        On Error GoTo Err_Handler
+    End If
+    
+    If folderPath = "" Then
+        MsgBox "同期対象のフォルダパスを特定できませんでした。" & vbCrLf & _
+               "ID: " & idOrPath, vbCritical
+        Exit Sub
+    End If
+    
+    ' デバッグ用メッセージ (確認後は削除してOK)
+    Debug.Print "VBA同期実行対象: " & folderPath
+    
     If Right(folderPath, 1) <> "\" Then folderPath = folderPath & "\"
     Set fso = CreateObject("Scripting.FileSystemObject")
     
@@ -52,7 +78,7 @@ Public Sub Sync_Vba_Project()
     Application.VBE.CommandBars.FindControl(ID:=228).Execute
     On Error GoTo Err_Handler
     
-    For i = vbeProj.VBComponents.count To 1 Step -1
+    For i = vbeProj.VBComponents.Count To 1 Step -1
         Dim comp As Object: Set comp = vbeProj.VBComponents(i)
         If comp.Name <> "acc_mod_VbaSync" And (comp.Type = 1 Or comp.Type = 2) Then
             ' 【ポイント】削除時の確認ダイアログを出さないための処理
@@ -117,5 +143,7 @@ Private Sub ImportFromUtf8(ByRef vbeProj As Object, ByVal utf8Path As String)
     vbeProj.VBComponents.Import tempPath
     If fso.FileExists(tempPath) Then fso.DeleteFile tempPath
 End Sub
+
+
 
 

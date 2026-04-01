@@ -9,7 +9,7 @@ Option Explicit
 Private Const SRC_TABLE As String = "at_kenmuTemp"
 Private Const TGT_TABLE As String = "at_kenmu"
 
-Public Function Transcribe_Kenmu_Data_WithLog()
+Public Function Transcribe_Kenmu_Data_WithLog(Optional ByVal callingID As Long = 0)
     Dim db As DAO.Database: Set db = CurrentDb
     Dim rsSrc As DAO.Recordset
     Dim rsTgt As DAO.Recordset

@@ -1,77 +1,114 @@
 Attribute VB_Name = "acc_mod_Import_Main"
-'-------------------------------------
-' Module: acc_mod_Import_Main (EZsystem Refactored)
-' 修正内容：
-'    1. ファイルパス（sourcePath）を受け取り、テーブルへ保存する機能を追加
-'    2. 引数の数（シグネチャ）を呼び出し元と一致するよう修正
-'-------------------------------------
 Option Explicit
 
-Private Const TARGET_TABLE As String = "at_kenmuTemp"
-Private Const TARGET_SHEET As String = "職員兼務率"
-Private Const TARGET_LISTOBJ As String = "xt_kenmu"
-Private Const INPUT_FOLDER As String = "D:\My_Projects\RN管理表関係\職員兼務率\inputdata\"
+'----------------------------------------------------------------
+' Module: acc_mod_Import_Main (EZsystem Integrated)
+' 説明   : 職員兼務率の「Excel取込」と「本番転写」を一気に実行する統合モジュール
+' 修正内容:
+'    1. 定数管理を acc_mod_MappingTemplate へ集約
+'    2. インポート終了後に自動で整形転写処理を開始
+'    3. 全工程を単一のトランザクションで制御
+'----------------------------------------------------------------
 
 '--------------------------------------------
 ' プロシージャ名： Run_Kenmu_Import_EZ
+' 概要： Excelから暫定テーブルへ取込後、整形して本番テーブルへ転送する
 '--------------------------------------------
-Public Sub Run_Kenmu_Import_EZ()
-    Dim importer As New acc_clsExcelImporter
-    Dim xlApp As Object
-    Dim wb As Object
-    Dim ws As Object
-    Dim fileName As String
-    Dim filePath As String
-    Dim fileCount As Long
-    
-    Set xlApp = CreateObject("Excel.Application")
-    Call Fast_Mode_Toggle(True, xlApp)
+Public Sub Run_Kenmu_Import_EZ(Optional ByVal callingID As Long = 0)
+    Dim db            As DAO.Database: Set db = CurrentDb
+    Dim rsConfig      As DAO.Recordset
+    Dim importer      As New acc_clsExcelImporter
+    Dim xlApp         As Object
+    Dim wb            As Object
+    Dim ws            As Object
+    Dim fso           As Object
+    Dim selectedFiles As Collection
+    Dim fileItem      As Variant
+    Dim fileName      As String
+    Dim inputFolder   As String
+    Dim fileCount     As Long
     
     On Error GoTo ErrLine
     
-    CurrentDb.Execute "DELETE * FROM [" & TARGET_TABLE & "];", dbFailOnError
-
-    importer.Init
-    importer.TempTableName = TARGET_TABLE
-
-    fileName = Dir(INPUT_FOLDER & "*.xls*")
-    
-    If fileName = "" Then
-        MsgBox "指定されたフォルダにExcelファイルが見つかりません:" & vbCrLf & INPUT_FOLDER, vbExclamation
-        GoTo CleanUp
+    ' 1. レジストリから初期パス取得
+    Dim strSQL As String
+    If callingID > 0 Then
+        strSQL = "SELECT [既定パス] FROM [" & AT_SYSTEM_REG & "] WHERE [ID] = " & callingID
+    Else
+        strSQL = "SELECT [既定パス] FROM [" & AT_SYSTEM_REG & "] WHERE [処理名称] = '職員兼務率インポート'"
     End If
-
-    Do While fileName <> ""
-        filePath = INPUT_FOLDER & fileName
+    
+    Set rsConfig = db.OpenRecordset(strSQL, dbOpenSnapshot)
+    If rsConfig.EOF Then
+        MsgBox "システムレジストリに設定が見つかりません (ID: " & callingID & ")", vbCritical
+        Exit Sub
+    End If
+    inputFolder = Nz(rsConfig![既定パス], ""): rsConfig.Close
+    
+    ' 2. ユーザーによる複数ファイル選択
+    Set selectedFiles = SelectMultipleFiles(inputFolder)
+    If selectedFiles.Count = 0 Then Exit Sub ' キャンセル時
+    
+    ' 3. 初期準備
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set xlApp = CreateObject("Excel.Application")
+    Call Fast_Mode_Toggle(True, xlApp)
+    
+    ' --- トランザクション開始 ---
+    Dim wsJK As DAO.Workspace: Set wsJK = DBEngine.Workspaces(0)
+    wsJK.BeginTrans
+    
+    ' 第一工程：暫定テーブルのクリアとインポート
+    db.Execute "DELETE * FROM [" & AT_KENMU_TEMP & "];", dbFailOnError
+    
+    importer.Init
+    importer.TempTableName = AT_KENMU_TEMP
+    
+    For Each fileItem In selectedFiles
+        fileName = fso.GetFileName(fileItem)
         fileCount = fileCount + 1
         
-        Set wb = xlApp.Workbooks.Open(filePath, ReadOnly:=True)
+        Set wb = xlApp.Workbooks.Open(fileItem, ReadOnly:=True)
         
         On Error Resume Next
-        Set ws = wb.Worksheets(TARGET_SHEET)
+        Set ws = wb.Worksheets(SH_NAME_KENMU)
         On Error GoTo ErrLine
         
-        If Not ws Is Nothing Then
-            Dim lo As Object
-            Set lo = ws.ListObjects(TARGET_LISTOBJ)
-            
-            Dim worksiteName As String
-            worksiteName = ws.Range("D2").value
-            
-            If Not lo Is Nothing Then
-                ' ★第3引数として filePath を渡します
-                Call Process_Kenmu_Data_Custom(lo, worksiteName, filePath)
-            End If
+        If ws Is Nothing Then Err.Raise 999, , "シート「" & SH_NAME_KENMU & "」が見つかりません: " & fileName
+        
+        Dim lo As Object
+        On Error Resume Next
+        Set lo = ws.ListObjects(LO_NAME_KENMU)
+        On Error GoTo ErrLine
+        
+        If lo Is Nothing Then Err.Raise 999, , "テーブル「" & LO_NAME_KENMU & "」が見つかりません: " & fileName
+        
+        ' 作業所名チェック
+        Dim worksiteName As String
+        worksiteName = Trim(Nz(ws.Range("D2").value, ""))
+        If worksiteName = "" Then
+            Err.Raise 999, , "作業所名（D2セル）が未入力です: " & fileName
         End If
+        
+        Call importer.ImportUnpivotedData(lo, worksiteName, CStr(fileItem))
         
         wb.Close SaveChanges:=False
         Set ws = Nothing
-        fileName = Dir()
-    Loop
-
-    Call Notify_Smart_Popup(fileCount & " 件のファイルをインポートしました。", "完了通知")
+    Next fileItem
+    
+    ' 第二工程：暫定テーブル -> 本番テーブルへの整形・転送
+    Call Transcribe_Integrated_Logic(db)
+    
+    ' 第三工程：本番テーブル -> 累計履歴への同期（転送元勝ち）
+    Call Update_Kenmu_History(db)
+    
+    ' --- すべて成功したら確定 ---
+    wsJK.CommitTrans
+    
+    Call Notify_Smart_Popup(fileCount & " 件のファイルをインポート・累計同期しました。", "完了通知")
 
 CleanUp:
+    On Error Resume Next
     If Not xlApp Is Nothing Then
         xlApp.Quit
         Set xlApp = Nothing
@@ -80,62 +117,99 @@ CleanUp:
     Exit Sub
 
 ErrLine:
-    MsgBox "エラー発生 (" & fileName & "): " & Err.Description, vbCritical
+    ' エラー情報を即座に保存
+    Dim errNum As Long:   errNum = Err.Number
+    Dim errDesc As String: errDesc = Err.Description
+    
+    On Error Resume Next
+    If Not wsJK Is Nothing Then wsJK.Rollback
+    
+    ' 特定のエラー番号に対する詳細メッセージ
+    Dim customMsg As String
+    If errNum = 3022 Then
+        customMsg = "【ID重複エラー】既に取り込まれている累計データ、または他ファイルと ID(ImportID) が重複しています。"
+    Else
+        customMsg = "エラー内容(" & errNum & "): " & errDesc
+    End If
+    
+    MsgBox "【インポート中断】" & vbCrLf & _
+           "ファイル: " & fileName & vbCrLf & _
+           customMsg, vbCritical
     Resume CleanUp
 End Sub
 
 '--------------------------------------------
-' 内部補助：兼務率特有のデータ変換ロジック
-' ★修正ポイント：引数に ByVal sourcePath As String を追加
+' 統合ロジック：暫定から本番への整形・転回
 '--------------------------------------------
-Public Sub Process_Kenmu_Data_Custom(ByRef lo As Object, ByVal worksiteName As String, ByVal sourcePath As String)
-    Dim db As DAO.Database: Set db = CurrentDb
-    Dim rs As DAO.Recordset
-    Dim dataArr As Variant
-    Dim r As Long, c As Long
-    Dim colName As String
-    Dim normCol As String
+Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
+    Dim rsSrc As DAO.Recordset
+    Dim rsTgt As DAO.Recordset
     
-    Dim idxNo As Long:    idxNo = Get_ColumnIndex_Robust(lo, "No")
-    Dim idxYear As Long:  idxYear = Get_ColumnIndex_Robust(lo, "年月")
-    Dim idxCode As Long:  idxCode = Get_ColumnIndex_Robust(lo, "工事コード")
-    Dim idxName As Long:  idxName = Get_ColumnIndex_Robust(lo, "工事名")
-    Dim idxComm As Long:  idxComm = Get_ColumnIndex_Robust(lo, "コメント")
+    ' 本番テーブルをクリア
+    db.Execute "DELETE * FROM [" & AT_KENMU_MAIN & "];", dbFailOnError
     
-    dataArr = lo.DataBodyRange.value
-    Set rs = db.OpenRecordset(TARGET_TABLE, dbOpenDynaset)
+    Set rsSrc = db.OpenRecordset(AT_KENMU_TEMP, dbOpenSnapshot)
+    Set rsTgt = db.OpenRecordset(AT_KENMU_MAIN, dbOpenDynaset)
     
-    For r = 1 To UBound(dataArr, 1)
-        For c = 1 To lo.ListColumns.count
-            colName = lo.ListColumns(c).Name
-            normCol = Normalize_Text(colName)
+    Do Until rsSrc.EOF
+        ' 兼務率の正規化
+        Dim dblRate As Double
+        dblRate = Cleanse_Percent_Smart(rsSrc!兼務率割合)
+        
+        ' 値が 0（またはエラー）でない場合のみ本番へ登録
+        If dblRate <> 0 Then
+            rsTgt.AddNew
             
-            If InStr(colName, vbLf) = 0 And _
-               UCase(normCol) <> "NO" And _
-               normCol <> Normalize_Text("年月") And _
-               normCol <> Normalize_Text("工事コード") And _
-               normCol <> Normalize_Text("工事名") And _
-               normCol <> Normalize_Text("コメント") Then
-               
-                If Not IsEmpty(dataArr(r, c)) And dataArr(r, c) <> 0 Then
-                    rs.AddNew
-                    
-                    ' ★追加：元ファイルパスをテーブルのフィールドへ保存
-                    rs!元ファイルパス = sourcePath
-                    rs!作業所名 = worksiteName
-                    
-                    If idxNo > 0 Then rs!No = dataArr(r, idxNo)
-                    If idxYear > 0 Then rs!年月 = dataArr(r, idxYear)
-                    If idxCode > 0 Then rs!工事コード = dataArr(r, idxCode)
-                    If idxName > 0 Then rs!工事名 = dataArr(r, idxName)
-                    If idxComm > 0 Then rs!コメント = dataArr(r, idxComm)
-                    rs!社員名 = colName
-                    rs!兼務率割合 = dataArr(r, c)
-                    rs.Update
-                End If
-            End If
-        Next c
-    Next r
-    rs.Close
+            ' 主キー（ImportID）の引き継ぎ
+            rsTgt!ImportID = rsSrc!ImportID
+            
+            rsTgt!元ファイルパス = rsSrc!元ファイルパス
+            rsTgt!作業所名 = rsSrc!作業所名
+            rsTgt!No = rsSrc!No
+            rsTgt!工事コード = rsSrc!工事コード
+            rsTgt!工事名 = rsSrc!工事名
+            rsTgt!コメント = rsSrc!コメント
+            rsTgt!社員名 = rsSrc!社員名
+            
+            ' 日付整形（MappingTemplateのロジックを使用）
+            Dim dtFinal As Variant
+            dtFinal = Cleanse_Date_Smart(rsSrc!年月)
+            rsTgt!年月 = dtFinal
+            
+            ' 期・Q の自動計算（新規追加）
+            rsTgt!期 = Get_FiscalTerm(dtFinal)
+            rsTgt!Q = Get_Quarter(dtFinal)
+            
+            rsTgt!兼務率割合 = dblRate
+            
+            rsTgt.Update
+        End If
+        rsSrc.MoveNext
+    Loop
+    
+    rsSrc.Close
+    rsTgt.Close
 End Sub
 
+'--------------------------------------------
+' 累計同期ロジック：転送元勝ち（Delete & Insert）
+'--------------------------------------------
+Private Sub Update_Kenmu_History(ByRef db As DAO.Database)
+    Dim strSQL As String
+    
+    ' 1. 同一キー（年月+工事コード+社員名+兼務率割合）を持つ既存レコードを削除
+    strSQL = "DELETE FROM [" & AT_KENMU_HISTORY & "] " & _
+             "WHERE EXISTS (" & _
+             "  SELECT 1 FROM [" & AT_KENMU_MAIN & "] AS SRC " & _
+             "  WHERE [" & AT_KENMU_HISTORY & "].[年月] = SRC.[年月] " & _
+             "    AND [" & AT_KENMU_HISTORY & "].[工事コード] = SRC.[工事コード] " & _
+             "    AND [" & AT_KENMU_HISTORY & "].[社員名] = SRC.[社員名] " & _
+             "    AND [" & AT_KENMU_HISTORY & "].[兼務率割合] = SRC.[兼務率割合] " & _
+             ")"
+    db.Execute strSQL, dbFailOnError
+    
+    ' 2. 本番テーブルから累計テーブルへ全件追加
+    ' ※ImportID が重複した場合は、上位の ErrLine でトラップされる
+    strSQL = "INSERT INTO [" & AT_KENMU_HISTORY & "] SELECT * FROM [" & AT_KENMU_MAIN & "];"
+    db.Execute strSQL, dbFailOnError
+End Sub
