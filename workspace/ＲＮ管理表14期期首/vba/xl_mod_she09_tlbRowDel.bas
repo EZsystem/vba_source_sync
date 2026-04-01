@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she09_tlbRowDel"
+Attribute VB_Name = "she09_tlbRowDel"
 '-------------------------------------
 ' Module: she09_tlbRowDel
 ' 説明　：テーブル操作の共通関数群

@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she031_In"
+Attribute VB_Name = "she031_In"
 Option Explicit
 
 ' このコードはユーザーが指定したExcelファイルからデータを転写する

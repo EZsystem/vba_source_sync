@@ -4,10 +4,13 @@ Excel File: ＲＮ管理表14期期首.xlsm
 ■ Sheet: 14期
   (No Tables)
 
+■ Sheet: RN中間計算
+  (No Tables)
+
 ■ Sheet: 各県RNQ毎
   (No Tables)
 
-■ Sheet: xt
+■ Sheet: 経費M
   └─ Table: tbl_工事一覧
      Range: $A$6:$G$65
      Columns: s基本工事コード, 仮基本工事コード, s基本工事名称, 施工管轄組織名, 完工Q, 一件工事判定, 基本工事名_官民

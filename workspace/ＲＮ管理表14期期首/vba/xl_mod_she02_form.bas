@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she02_form"
+Attribute VB_Name = "she02_form"
 Option Explicit
 
 '予実績表のセル塗りつぶし

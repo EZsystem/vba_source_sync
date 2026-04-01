@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she09_accInp"
+Attribute VB_Name = "she09_accInp"
 '-------------------------------------
 ' Module: she09_accInp
 ' 説明  : Accessのクエリ結果をExcelに出力（ヘッダー付き配列を使用）

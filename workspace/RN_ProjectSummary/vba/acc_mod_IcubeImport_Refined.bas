@@ -74,13 +74,14 @@ Public Sub Run_IcubeImport_FullStep()
     Set xlApp = CreateObject("Excel.Application")
     Set wb = xlApp.Workbooks.Open(filePath, ReadOnly:=True)
     
-    ' インポート実行 (オブジェクト名でシートを取得)
+    ' インポート実行 (1枚目のシートを無条件で取得)
     Dim xlSheet As Object
-    Set xlSheet = G_GetSheetByCodeName(wb, SH_CODE_EX_ICUBE)
+    On Error Resume Next
+    Set xlSheet = wb.Sheets(1)
+    On Error GoTo Err_Handler
     
     If xlSheet Is Nothing Then
-        ' 旧来の1番目シート取得にフォールバック、またはエラー終了（ここではオブジェクト名を推奨、なければエラー）
-        MsgBox "対象のICUBEシートが見つかりません (CodeName: " & SH_CODE_EX_ICUBE & ")", vbCritical
+        MsgBox "Excelブック内に有効なシートが見つかりません。", vbCritical
         GoTo Err_Handler
     End If
     

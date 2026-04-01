@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she09_tbeitiranAll"
+Attribute VB_Name = "she09_tbeitiranAll"
 ' Module: she09_tbeitiranAll
 ' プロシージャ名 : she09_tbeitiranAll_1
 

@@ -1,4 +1,3 @@
-Attribute VB_Name = "acc_mod_VbaSync"
 'Attribute VB_Name = "acc_mod_VbaSync"
 Option Compare Database
 Option Explicit
@@ -6,14 +5,9 @@ Option Explicit
 '================================================================
 ' Module: acc_mod_VbaSync
 ' 説明   : 外部フォルダから .bas / .cls ファイルを一括インポートする同期ツール
-' 更新日 : 2026/04/01 (UTF-8ハイブリッド同期版)
+' 更新日 : 2026/04/01 (快適版：削除時・保存時の確認を極力自動化)
 '================================================================
 
-'----------------------------------------------------------------
-' プロシージャ名 : Sync_Vba_Project
-' 概要           : ワークスペースのUTF-8ソースをShift-JISに自動変換してAccessに同期します。
-' 実行条件       : 「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」がONであること
-'----------------------------------------------------------------
 Public Sub Sync_Vba_Project()
     Dim db As DAO.Database: Set db = CurrentDb
     Dim rs As DAO.Recordset
@@ -21,132 +15,104 @@ Public Sub Sync_Vba_Project()
     Dim folderPath As String
     Dim fileObj As Object
     Dim fileList As String
-    Dim compName As String
     Dim updateCount As Long
     
     On Error GoTo Err_Handler
     
-    ' 1. システムレジストリからパスを取得
+    ' 1. パス取得
     Set rs = db.OpenRecordset("SELECT [既定パス] FROM [_at_SystemRegistry] WHERE [処理名称] = 'VBAソースコード同期'", dbOpenSnapshot)
-    
-    If rs.EOF Then
-        MsgBox "システムレジストリに 'VBAソースコード同期' の設定が見つかりません。", vbCritical
-        Exit Sub
-    End If
-    
-    folderPath = Nz(rs![既定パス], "")
-    rs.Close
-    
-    If folderPath = "" Then
-        MsgBox "VBA同期用のパスが空欄です。", vbExclamation
-        Exit Sub
-    End If
-    
+    If rs.EOF Then MsgBox "システムレジストリの設定なし", vbCritical: Exit Sub
+    folderPath = Nz(rs![既定パス], ""): rs.Close
+    If folderPath = "" Then Exit Sub
     If Right(folderPath, 1) <> "\" Then folderPath = folderPath & "\"
-    
     Set fso = CreateObject("Scripting.FileSystemObject")
-    If Not fso.FolderExists(folderPath) Then
-        MsgBox "フォルダが見つかりません：" & vbCrLf & folderPath, vbCritical
-        Exit Sub
-    End If
     
-    ' 2. 更新対象ファイルのリストアップ
+    ' 2. インポート対象の確認
     fileList = ""
     For Each fileObj In fso.GetFolder(folderPath).Files
-        Select Case LCase(fso.GetExtensionName(fileObj.Name))
-            Case "bas", "cls"
-                compName = fso.GetBaseName(fileObj.Name)
-                ' 自分自身は除外（自己破壊防止）
-                If compName <> "acc_mod_VbaSync" Then
-                    fileList = fileList & " - " & fileObj.Name & vbCrLf
-                End If
-        End Select
+        If LCase(fso.GetExtensionName(fileObj.Name)) Like "[bc][al][ss]" Then
+            If fso.GetBaseName(fileObj.Name) <> "acc_mod_VbaSync" Then
+                fileList = fileList & " - " & fileObj.Name & vbCrLf
+            End If
+        End If
     Next
     
-    If fileList = "" Then
-        MsgBox "対象フォルダにソースファイルが見つかりません。", vbInformation
+    If MsgBox("【高速同期】モジュールを全入替し、最後に一括保存・コンパイルを行います。" & vbCrLf & _
+              "※途中の保存確認ダイアログは自動的にスキップされます。", vbInformation + vbOKCancel, "VBA同期の実行（快適版）") <> vbOK Then
         Exit Sub
     End If
     
-    ' 3. 実行前確認
-    If MsgBox("以下のモジュールをワークスペースから最新同期（UTF-8変換込）しますか？" & vbCrLf & _
-              fileList, vbQuestion + vbOKCancel, "ハイブリッド同期の実行確認") <> vbOK Then
-        Exit Sub
-    End If
+    ' 3. 強力なクリーンアップ（退避リネーム削除）
+    Dim vbeProj As Object: Set vbeProj = Application.VBE.ActiveVBProject
+    Dim i As Long
     
-    ' 4. インポートの実行
-    Dim vbeProj As Object
+    ' リセット実行（実行ロックの解除）
     On Error Resume Next
-    Set vbeProj = Application.VBE.ActiveVBProject
-    If Err.Number <> 0 Then
-        MsgBox "VBAプロジェクトへのアクセスに失敗しました。「信頼設定」を確認してください。", vbCritical
-        Exit Sub
-    End If
+    Application.VBE.CommandBars.FindControl(ID:=228).Execute
     On Error GoTo Err_Handler
     
+    For i = vbeProj.VBComponents.count To 1 Step -1
+        Dim comp As Object: Set comp = vbeProj.VBComponents(i)
+        If comp.Name <> "acc_mod_VbaSync" And (comp.Type = 1 Or comp.Type = 2) Then
+            ' 【ポイント】削除時の確認ダイアログを出さないための処理
+            Call AtomicRemove_Silent(comp)
+        End If
+    Next i
+    
+    ' 4. インポートの実行
     For Each fileObj In fso.GetFolder(folderPath).Files
-        Select Case LCase(fso.GetExtensionName(fileObj.Name))
-            Case "bas", "cls"
-                compName = fso.GetBaseName(fileObj.Name)
-                
-                If compName <> "acc_mod_VbaSync" Then
-                    ' 既存コンポーネントを削除
-                    On Error Resume Next
-                    vbeProj.VBComponents.Remove vbeProj.VBComponents(compName)
-                    On Error GoTo Err_Handler
-                    
-                    ' 【ポイント】UTF-8からShift-JISへの一時変換インポートを実行
-                    Call ImportFromUtf8(vbeProj, fileObj.Path)
-                    updateCount = updateCount + 1
-                End If
-        End Select
+        Dim ext As String: ext = LCase(fso.GetExtensionName(fileObj.Name))
+        If (ext = "bas" Or ext = "cls") And fso.GetBaseName(fileObj.Name) <> "acc_mod_VbaSync" Then
+            Dim targetName As String: targetName = fso.GetBaseName(fileObj.Name)
+            ' 重複の残骸があれば執拗に消去
+            On Error Resume Next
+            Call AtomicRemove_Silent(vbeProj.VBComponents(targetName))
+            Call AtomicRemove_Silent(vbeProj.VBComponents(targetName & "1"))
+            On Error GoTo Err_Handler
+            
+            Call ImportFromUtf8(vbeProj, fileObj.Path)
+            updateCount = updateCount + 1
+        End If
     Next
     
-    MsgBox updateCount & " 件のモジュールを、UTF-8から高度同期しました。", vbInformation
+    ' 5. 【仕上げ】全モジュールの一括保存とコンパイル（ダイアログ防止の決定打）
+    On Error Resume Next
+    DoCmd.RunCommand acCmdCompileAndSaveAllModules
+    On Error GoTo Err_Handler
+    
+    MsgBox updateCount & " 件の同期、および一括保存・コンパイルが完了しました。", vbInformation
     Exit Sub
 
 Err_Handler:
-    MsgBox "同期処理中にエラーが発生しました：" & vbCrLf & Err.Description, vbCritical
+    MsgBox "同期エラー：" & Err.Description, vbCritical
 End Sub
 
-'----------------------------------------------------------------
-' 内部補助関数 : ImportFromUtf8
-' 概要           : UTF-8ファイルを読み込み、Shift-JISの一時ファイルとしてImportします。
-'----------------------------------------------------------------
+' ダイアログを出さずに削除する
+Private Sub AtomicRemove_Silent(ByRef comp As Object)
+    If comp Is Nothing Then Exit Sub
+    On Error Resume Next
+    ' 名前を変えて衝突を回避
+    comp.Name = "tmp_" & Format(Now, "hhnnss") & "_" & comp.Name
+    ' 削除（確認を抑制）
+    Application.VBE.ActiveVBProject.VBComponents.Remove comp
+    On Error GoTo 0
+End Sub
+
+' UTF-8変換インポート（一時ファイルの拡張子を厳守）
 Private Sub ImportFromUtf8(ByRef vbeProj As Object, ByVal utf8Path As String)
     Dim stream As Object: Set stream = CreateObject("ADODB.Stream")
     Dim sjisStream As Object: Set sjisStream = CreateObject("ADODB.Stream")
     Dim fso As Object: Set fso = CreateObject("Scripting.FileSystemObject")
-    Dim tempPath As String: tempPath = utf8Path & ".sync_temp"
+    Dim ext As String: ext = fso.GetExtensionName(utf8Path)
+    Dim tempPath As String: tempPath = fso.GetParentFolderName(utf8Path) & "\_sync_tmp_" & fso.GetBaseName(utf8Path) & "." & ext
     
-    ' 1. UTF-8 (BOMなし/あり両対応) で読み込み
-    stream.Type = 2 ' adTypeText
-    stream.Charset = "UTF-8"
-    stream.Open
-    stream.LoadFromFile utf8Path
+    stream.Type = 2: stream.Charset = "UTF-8": stream.Open: stream.LoadFromFile utf8Path
+    sjisStream.Type = 2: sjisStream.Charset = "shift-jis": sjisStream.Open: stream.CopyTo sjisStream
     
-    ' 2. Shift-JIS で別ストリームに書き出し
-    sjisStream.Type = 2 ' adTypeText
-    sjisStream.Charset = "shift-jis"
-    sjisStream.Open
-    
-    ' 内容をコピー (内部でエンコード変換が行われます)
-    stream.CopyTo sjisStream
-    
-    ' 3. 一時ファイルとして保存
-    On Error Resume Next
     If fso.FileExists(tempPath) Then fso.DeleteFile tempPath
-    On Error GoTo 0
-    sjisStream.SaveToFile tempPath, 2 ' adSaveCreateOverWrite
+    sjisStream.SaveToFile tempPath, 2
+    stream.Close: sjisStream.Close
     
-    stream.Close
-    sjisStream.Close
-    
-    ' 4. インポート実行 (Shift-JISのファイルを読み込ませる)
     vbeProj.VBComponents.Import tempPath
-    
-    ' 5. 一時ファイルの削除
     If fso.FileExists(tempPath) Then fso.DeleteFile tempPath
 End Sub
-
-

@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "Import_Icube_AllQueries"
+Attribute VB_Name = "Import_Icube_AllQueries"
 Option Explicit
 
 '===========================================================

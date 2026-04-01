@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she0322_In"
+Attribute VB_Name = "she0322_In"
 '-------------------------------------
 ' Module: xl_mod_ImportSonneki
 ' 説明　：Accessクエリ→Excelテーブルへ高速インポート

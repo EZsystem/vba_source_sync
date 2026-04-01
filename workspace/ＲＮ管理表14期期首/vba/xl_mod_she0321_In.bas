@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she0321_In"
+Attribute VB_Name = "she0321_In"
 Option Explicit
 'シートD2へファイルから取込み
 Sub ImportDataFromUserFileD2()

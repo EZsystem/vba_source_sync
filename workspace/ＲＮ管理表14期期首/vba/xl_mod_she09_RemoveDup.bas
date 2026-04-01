@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she09_RemoveDup"
+Attribute VB_Name = "she09_RemoveDup"
 ' ============================================
 ' Module   : she09_RemoveDup
 ' プロシージャ名 : RemoveDuplicates_ByColA

@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she02_disp"
+Attribute VB_Name = "she02_disp"
 Option Explicit
 
 '表示期首、期中

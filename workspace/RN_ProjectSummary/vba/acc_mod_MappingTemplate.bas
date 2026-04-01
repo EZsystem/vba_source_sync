@@ -42,7 +42,8 @@ Public Const SH_CODE_CALC_WORK     As String = "sh_CalcWork"      ' 中間計算
 Public Const SH_CODE_REPORT_OUT    As String = "sh_ReportOutput"  ' 管理表出力
 Public Const SH_CODE_EX_MASTER      As String = "sh_Ex_Master"     ' M_経費/組織 (旧: xt)
 Public Const SH_CODE_EX_ICUBE       As String = "sh_Ex_Icube"      ' Icubeデータ
-Public Const SH_CODE_EX_GENKA       As String = "sh_Ex_Genka"      ' 原価データ
+Public Const SH_CODE_EX_GENKA       As String = "CostMng1"         ' 原価データ (オブジェクト名)
+Public Const SH_NAME_EX_GENKA       As String = "原価S直データ"    ' 原価データ (シート見出し名)
 Public Const SH_CODE_EX_EMP         As String = "sh_EX_Emp"        ' 兼務率_給与人員 (旧: 兼務率2)
 
 ' --- ツール管理・クエリ ---

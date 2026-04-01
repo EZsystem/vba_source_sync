@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she033_In"
+Attribute VB_Name = "she033_In"
 '-------------------------------------
 ' Module: she033_In
 ' 説明　：Accessクエリ→Excelテーブルへ高速インポート（3処理まとめ）

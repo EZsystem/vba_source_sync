@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "she041_In"
+Attribute VB_Name = "she041_In"
 '-------------------------------------
 ' Module: she041_In
 ' 説明  : ExcelからExcelへのデータ転写処理（タイトル一致列のみ）

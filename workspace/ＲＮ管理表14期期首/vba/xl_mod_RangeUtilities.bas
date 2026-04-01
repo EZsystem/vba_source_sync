@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "xl_mod_RangeUtilities"
+Attribute VB_Name = "xl_mod_RangeUtilities"
 '-------------------------------------
 ' Module: xl_mod_RangeUtilities
 ' 説明  : Range／セル操作の拡張関数
