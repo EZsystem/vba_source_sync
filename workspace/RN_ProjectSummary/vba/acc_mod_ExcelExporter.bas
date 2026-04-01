@@ -1,5 +1,4 @@
 ﻿Attribute VB_Name = "acc_mod_ExcelExporter"
-'Attribute VB_Name = "acc_mod_ExcelExporter"
 '----------------------------------------------------------------
 ' Module: acc_mod_ExcelExporter
 ' 説明   : 管理テーブル (_at_ExportConfig) 駆動型 Excel エクスポート (診断機能付)
@@ -112,7 +111,8 @@ Public Sub Execute_Excel_Data_Export()
         ' (C) シート・テーブル転送プロセス
         Set xlSheet = Nothing
         On Error Resume Next
-        Set xlSheet = xlBook.Sheets(snName)
+        ' シート名（Caption）ではなくオブジェクト名（CodeName）で取得
+        Set xlSheet = G_GetSheetByCodeName(xlBook, snName)
         On Error GoTo Err_Handler
         
         If Not xlSheet Is Nothing Then
@@ -210,5 +210,22 @@ Private Sub ClearListObject_LeaveOneRow(ByRef ws As Object, ByVal tblName As Str
         lo.DataBodyRange.Rows(1).ClearContents
     End If
 End Sub
+
+'----------------------------------------------------------------
+' 関数名 : G_GetSheetByCodeName
+' 説明   : Workbook内をループし、CodeNameが一致するシートを返します。
+'----------------------------------------------------------------
+Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal codeName As String) As Object
+    Dim sh As Object
+    For Each sh In wb.Sheets
+        If sh.codeName = codeName Then
+            Set G_GetSheetByCodeName = sh
+            Exit Function
+        End If
+    Next sh
+    Set G_GetSheetByCodeName = Nothing
+End Function
+
+
 
 

@@ -66,7 +66,18 @@ Private Function Import_Excel_To_Temp() As Boolean
     Set xlApp = CreateObject("Excel.Application")
     xlApp.Visible = False
     Set xlBook = xlApp.Workbooks.Open(xlPath, ReadOnly:=True)
-    Set xlSheet = xlBook.Sheets("原価S直データ")
+    
+    ' オブジェクト名（CodeName）でシートを特定
+    Set xlSheet = G_GetSheetByCodeName(xlBook, SH_CODE_EX_GENKA)
+    
+    If xlSheet Is Nothing Then
+        Debug.Print "対象シート (CodeName: " & SH_CODE_EX_GENKA & ") が見つかりません。"
+        GoTo Exit_Sub
+    End If
+    
+    ' 現在のシート名（見出し名）を取得
+    Dim snActual As String
+    snActual = xlSheet.Name
     
     lastRow = xlSheet.Cells(xlSheet.Rows.count, 1).End(-4162).Row
     xlBook.Close False
@@ -80,8 +91,8 @@ Private Function Import_Excel_To_Temp() As Boolean
     ' インポート先ワークテーブルをクリア
     db.Execute "DELETE FROM [" & AT_GENKA_IMPORT_WORK & "]", dbFailOnError
     
-    ' A7:AT(最終行)を取得
-    importRange = "原価S直データ!A7:AT" & lastRow
+    ' A7:AT(最終行)を取得 (動的に取得したシート名を使用)
+    importRange = snActual & "!A7:AT" & lastRow
     DoCmd.TransferSpreadsheet acImport, acSpreadsheetTypeExcel12, _
         AT_GENKA_IMPORT_WORK, xlPath, False, importRange
         
@@ -366,6 +377,8 @@ Public Sub Validate_Branch_Against_Icube_Accumulated()
 Err_Handler:
     Debug.Print "Validation Error: " & Err.Description
 End Sub
+
+
 
 
 

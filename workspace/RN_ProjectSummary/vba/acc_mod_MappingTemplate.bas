@@ -1,5 +1,5 @@
 ﻿Attribute VB_Name = "acc_mod_MappingTemplate"
-'Attribute VB_Name = "acc_mod_Genka_MappingManager"
+'Attribute VB_Name = "acc_mod_MappingTemplate"
 '----------------------------------------------------------------
 ' Module: acc_mod_Genka_MappingManager (Original: acc_mod_MappingTemplate)
 ' 説明   : 原価管理システム用オブジェクト名の定義、およびマッピング管理ユーティリティ。
@@ -35,6 +35,15 @@ Public Const AT_KIHON_JUCHU As String = "at_基本工事_受注"
 Public Const AT_PROJECT_INFO As String = "at_工事コード情報"
 Public Const AT_EDABAN As String = "at_枝番工事"
 Public Const AT_LINK_KIHON_NAME As String = "at_基本工事名称_リンク"
+
+' --- Excel Sheet CodeNames (不変のオブジェクト名) ---
+Public Const SH_CODE_VALUE_ENTRY   As String = "sh_ValueEntry"    ' 14期_計算入力
+Public Const SH_CODE_CALC_WORK     As String = "sh_CalcWork"      ' 中間計算ワーク
+Public Const SH_CODE_REPORT_OUT    As String = "sh_ReportOutput"  ' 管理表出力
+Public Const SH_CODE_EX_MASTER      As String = "sh_Ex_Master"     ' M_経費/組織 (旧: xt)
+Public Const SH_CODE_EX_ICUBE       As String = "sh_Ex_Icube"      ' Icubeデータ
+Public Const SH_CODE_EX_GENKA       As String = "sh_Ex_Genka"      ' 原価データ
+Public Const SH_CODE_EX_EMP         As String = "sh_EX_Emp"        ' 兼務率_給与人員 (旧: 兼務率2)
 
 ' --- ツール管理・クエリ ---
 Public Const AT_MAPPING_INFO As String = "at_取込マッピング_Template"
@@ -123,4 +132,5 @@ Private Function Get_Field_Type_Literal(t As Integer) As String
         Case Else: Get_Field_Type_Literal = "その他"
     End Select
 End Function
+
 
