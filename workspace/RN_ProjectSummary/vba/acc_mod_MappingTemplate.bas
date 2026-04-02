@@ -19,6 +19,7 @@ Public Const AT_ICUBE_IMPORT_WORK As String = "at_Temp_Icube_Import"
 Public Const AT_ICUBE_COL_SETTING As String = "at_Icube_ColSetting"
 
 ' --- バリデーション用マスタ ---
+Public Const AT_ORDER_FORECAST_KEISU As String = "at_受注額予測計数"
 Public Const AT_BUILDING_USE_MAP As String = "at_建物用途正誤表"
 Public Const AT_PRICE_CATEGORY_MAP As String = "at_工事金額区分表"
 Public Const AT_CLIENT_DATA As String = "at_顧客データ"
@@ -54,6 +55,8 @@ Public Const SH_CODE_EX_EMP         As String = "sh_EX_Emp"        ' 兼務率2 
 ' --- ツール管理・クエリ ---
 Public Const AT_MAPPING_INFO As String = "at_取込マッピング_Template"
 Public Const AQ_SEL_KIHON_NAME As String = "sel_基本工事名称"
+Public Const AQ_SMALL_PROJECT_TRANS As String = "q_小口受注完工推移_3期分"
+Public Const AQ_ORDER_FORECAST_WA As String = "q_受注完工予測_加重平均集計"
 
 ' --- 原価管理システム (Cost Management) ---
 Public Const AT_GENKA_IMPORT_WORK As String = "at_Temp_原価S_import"
