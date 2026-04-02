@@ -213,7 +213,7 @@ End Sub
 Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal nameOrCode As String) As Object
     Dim sh As Object
     For Each sh In wb.Sheets
-        If sh.CodeName = nameOrCode Then
+        If sh.codeName = nameOrCode Then
             Set G_GetSheetByCodeName = sh
             Exit Function
         End If

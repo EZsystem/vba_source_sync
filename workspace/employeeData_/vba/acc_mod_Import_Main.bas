@@ -183,7 +183,6 @@ Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
             End If
             
             rsTgt!No = rsSrc!No
-            rsTgt!工事コード = rsSrc!工事コード
             rsTgt!工事名 = rsSrc!工事名
             rsTgt!コメント = rsSrc!コメント
             rsTgt!社員名 = rsSrc!社員名
@@ -198,6 +197,8 @@ Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
             ' 仮基本工事コードの紐付け（ワイルドカード考慮）
             Dim projectName As String
             Dim tempCode    As String: tempCode = ""
+            Dim sourceCode  As String: sourceCode = Trim(Nz(rsSrc!工事コード, ""))
+            
             projectName = Nz(rsSrc!工事名, "")
             
             If IsArray(arrMap) Then
@@ -205,17 +206,24 @@ Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
                     ' arrMap(m, 0) には既に "？" -> "?" 変換済みのパターンが入っている
                     If projectName Like arrMap(m, 0) Then
                         tempCode = arrMap(m, 1)
+                        ' ★追加：2文字目を四半期の数字(1-4)に書き換える (例: D1M -> D4M)
+                        If Len(tempCode) >= 2 Then
+                            Mid(tempCode, 2, 1) = Left(Nz(rsTgt!Q, "1"), 1)
+                        End If
                         Exit For
                     End If
                 Next m
             End If
             
-            ' マッチした場合はそのコード、しない場合は元の工事コードをセット
-            If tempCode <> "" Then
-                rsTgt!仮基本工事コード = tempCode
+            ' --- 【修正】工事コードのセット（未定補完あり） ---
+            If (sourceCode = "未定" Or sourceCode = "") And tempCode <> "" Then
+                rsTgt!工事コード = tempCode
             Else
-                rsTgt!仮基本工事コード = rsSrc!工事コード
+                rsTgt!工事コード = sourceCode
             End If
+            
+            ' --- 【修正】仮基本工事コードのセット ---
+            rsTgt!仮基本工事コード = IIf(tempCode <> "", tempCode, rsTgt!工事コード)
             
             rsTgt!兼務率割合 = dblRate
             

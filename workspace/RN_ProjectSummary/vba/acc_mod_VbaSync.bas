@@ -1,3 +1,4 @@
+Attribute VB_Name = "acc_mod_VbaSync"
 'Attribute VB_Name = "acc_mod_VbaSync"
 Option Compare Database
 Option Explicit
@@ -116,3 +117,5 @@ Private Sub ImportFromUtf8(ByRef vbeProj As Object, ByVal utf8Path As String)
     vbeProj.VBComponents.Import tempPath
     If fso.FileExists(tempPath) Then fso.DeleteFile tempPath
 End Sub
+
+
