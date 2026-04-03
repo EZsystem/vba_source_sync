@@ -10,6 +10,7 @@ import gc  # ガベージコレクション（メモリ解放）用に追加
 sys.path.append(str(Path(__file__).parent.parent))
 from src.exporter import VBAExporter, AccessSQLExtractor, ExcelInfoExtractor
 from src.git_handler import GitManager
+from src.history_mgr import HistoryManager
 
 def select_file_and_encoding():
     """ファイル選択ダイアログと文字コード選択画面を表示する（Excel/Access両対応版）"""
@@ -17,8 +18,14 @@ def select_file_and_encoding():
     root.title("バックアップ対象と文字コードの選択")
     root.geometry("450x150")
     
+    history_mgr = HistoryManager()
     selected_file = tk.StringVar()
     selected_encoding = tk.StringVar(value="デフォルト")
+    
+    # 履歴を読み込む
+    history_list = history_mgr.get_history()
+    if history_list:
+        selected_file.set(history_list[0])
     
     result = {"file": "", "encoding": ""}
     
@@ -35,6 +42,8 @@ def select_file_and_encoding():
         )
         if filename:
             selected_file.set(filename)
+            # 参照で選んだ場合も、コンボボックスの値を更新し、履歴追加の準備をする
+            file_cb['values'] = history_mgr.get_history()
             
     def execute():
         if not selected_file.get():
@@ -42,6 +51,8 @@ def select_file_and_encoding():
             return
         result["file"] = selected_file.get()
         result["encoding"] = selected_encoding.get()
+        # 履歴を保存
+        history_mgr.save_history(result["file"])
         root.destroy()
         
     def cancel():
@@ -51,8 +62,9 @@ def select_file_and_encoding():
     frame.pack(fill=tk.BOTH, expand=True)
     
     ttk.Label(frame, text="対象ファイル:").grid(row=0, column=0, sticky=tk.W, pady=5)
-    file_entry = ttk.Entry(frame, textvariable=selected_file, width=40)
-    file_entry.grid(row=0, column=1, padx=5, pady=5)
+    file_cb = ttk.Combobox(frame, textvariable=selected_file, width=40)
+    file_cb['values'] = history_list
+    file_cb.grid(row=0, column=1, padx=5, pady=5)
     ttk.Button(frame, text="参照...", command=browse_file).grid(row=0, column=2, pady=5)
     
     ttk.Label(frame, text="文字コード:").grid(row=1, column=0, sticky=tk.W, pady=5)
