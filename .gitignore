@@ -30,3 +30,6 @@ Thumbs.db
 # （コードのみを管理対象とし、重いxlsm/accdb自体は上げない設定）
 # *.xlsm
 # *.accdb
+
+# サンプルデータ（レコード内容）はGitHubに上げない
+**/samples/

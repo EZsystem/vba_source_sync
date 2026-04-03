@@ -1,6 +1,7 @@
 import os
 import win32com.client
 import shutil
+import json
 from pathlib import Path
 from loguru import logger
 
@@ -200,3 +201,78 @@ class ExcelInfoExtractor:
             return root_dir
         finally:
             excel.Quit()
+
+class AccessDataSampler:
+    """Accessのテーブルからレコード数とサンプルデータを抽出するクラス"""
+    def __init__(self, workspace_dir, encoding="utf-8"):
+        self.workspace_dir = Path(workspace_dir)
+        self.encoding = encoding
+
+    def extract_samples(self, file_path, row_limit=10):
+        file_path = os.path.abspath(file_path)
+        root_dir = self.workspace_dir / Path(file_path).stem / "samples"
+        
+        if root_dir.exists():
+            shutil.rmtree(root_dir)
+        root_dir.mkdir(parents=True, exist_ok=True)
+
+        access = win32com.client.Dispatch("Access.Application")
+        try:
+            # DAO (DBEngine) を使用してデータベースを開く
+            db = access.DBEngine.OpenDatabase(file_path)
+            
+            for tdf in db.TableDefs:
+                # システムテーブルや一時テーブルを除外
+                if not tdf.Name.startswith("MSys") and not tdf.Name.startswith("~"):
+                    table_name = tdf.Name
+                    sample_file = root_dir / f"{table_name}.json"
+                    
+                    try:
+                        # 1. 総レコード数の取得 (SELECT COUNT(*) が確実)
+                        rs_count = db.OpenRecordset(f"SELECT COUNT(*) FROM [{table_name}]")
+                        total_records = rs_count.Fields(0).Value
+                        rs_count.Close()
+
+                        # 2. サンプルデータの取得
+                        rs = db.OpenRecordset(f"SELECT TOP {row_limit} * FROM [{table_name}]")
+                        sample_data = []
+                        
+                        fields = [f.Name for f in rs.Fields]
+                        count = 0
+                        while not rs.EOF and count < row_limit:
+                            row = {}
+                            for f_name in fields:
+                                val = rs.Fields(f_name).Value
+                                # JSON変換できない型への簡易対策
+                                if hasattr(val, 'strftime'): # 日時
+                                    val = str(val)
+                                elif val is None:
+                                    val = None
+                                elif isinstance(val, (int, float, str, bool)):
+                                    pass
+                                else:
+                                    val = str(val)
+                                row[f_name] = val
+                            sample_data.append(row)
+                            rs.MoveNext()
+                            count += 1
+                        rs.Close()
+
+                        # 3. JSONとして保存
+                        output = {
+                            "table_name": table_name,
+                            "total_records": total_records,
+                            "sample_rows_count": len(sample_data),
+                            "sample_data": sample_data
+                        }
+                        
+                        with open(sample_file, "w", encoding=self.encoding) as f:
+                            json.dump(output, f, ensure_ascii=False, indent=4)
+                            
+                    except Exception as e:
+                        logger.warning(f"テーブル {table_name} のサンプリングに失敗しました: {e}")
+
+            db.Close()
+            return root_dir
+        finally:
+            access.Quit()
