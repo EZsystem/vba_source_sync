@@ -232,16 +232,38 @@ Private Sub Process_DateConversion_Smart(ByRef Cleaner As acc_clsDataCleaner)
     Dim Flds As Variant: Flds = Array("[データ年月（受注計上年月）]", "[完成年月日（枝番単位）]")
     Dim Prfx As Variant: Prfx = Array("受注", "完工")
     Dim i As Integer, TargetFld As String, TargetDate As Date
+    
     For i = 0 To UBound(Flds)
         TargetFld = IIf(Prfx(i) = "受注", "受注計上日_日付型", Prfx(i) & "日_日付型")
-        Set rs = CurrentDb.OpenRecordset("SELECT No, " & Flds(i) & ", " & Prfx(i) & "年度, " & Prfx(i) & "期, " & Prfx(i) & "Q, " & Prfx(i) & "月, " & TargetFld & " FROM Icube_", dbOpenDynaset)
+        ' 一件工事判定と基本工事名称を追加で取得（小口工事の名称優先ロジックのため）
+        Set rs = CurrentDb.OpenRecordset("SELECT No, " & Flds(i) & ", " & Prfx(i) & "年度, " & Prfx(i) & "期, " & Prfx(i) & "Q, " & Prfx(i) & "月, " & TargetFld & ", 一件工事判定, 基本工事名称 FROM Icube_", dbOpenDynaset)
+        
         Do While Not rs.EOF
             ' acc_clsDataCleaner を使用して安全に日付を取得
             TargetDate = Cleaner.CleanDate(rs.fields(1).Value)
             If VBA.Year(TargetDate) > 1900 Then
                 rs.Edit
                 rs.fields(Prfx(i) & "年度").Value = GetFiscalYear(TargetDate)
-                rs.fields(Prfx(i) & "期").Value = GetFiscalYear(TargetDate) - BASE_YEAR + 1
+                
+                ' --- 完工期かつ小口工事の場合のみ名称から算出 (RN_ProjectSummary基準) ---
+                Dim isSmallHandled As Boolean: isSmallHandled = False
+                If Prfx(i) = "完工" And rs!一件工事判定 = "小口工事" Then
+                    Dim projName As String: projName = Nz(rs!基本工事名称, "")
+                    Dim posYear As Long: posYear = InStr(projName, "年度")
+                    If posYear >= 3 Then
+                        Dim yearVal As Integer
+                        yearVal = Val(StrConv(Mid(projName, posYear - 2, 2), vbNarrow))
+                        rs.fields(Prfx(i) & "期").Value = yearVal - 12
+                        isSmallHandled = True
+                    End If
+                End If
+                
+                ' 通常ロジック (一件工事、または受注期の場合、あるいは名称から取得できなかった場合)
+                If Not isSmallHandled Then
+                    ' 修正: +1 を除去し、RN_ProjectSummary と統一 (2025年度 = 13期)
+                    rs.fields(Prfx(i) & "期").Value = GetFiscalYear(TargetDate) - BASE_YEAR
+                End If
+                
                 rs.fields(Prfx(i) & "Q").Value = GetFiscalQuarter(TargetDate)
                 rs.fields(Prfx(i) & "月").Value = VBA.Month(TargetDate)
                 rs.fields(TargetFld).Value = TargetDate
