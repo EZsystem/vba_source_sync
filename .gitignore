@@ -33,3 +33,4 @@ Thumbs.db
 
 # サンプルデータ（レコード内容）はGitHubに上げない
 **/samples/
+**/table_values/

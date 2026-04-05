@@ -156,7 +156,7 @@ class AccessSQLExtractor:
         type_map = {1: "YESNO", 3: "INTEGER", 4: "LONG", 5: "CURRENCY", 
                     6: "SINGLE", 7: "DOUBLE", 8: "DATETIME", 10: "TEXT", 12: "MEMO"}
         return type_map.get(type_id, "TEXT")
-    
+
 class ExcelInfoExtractor:
     """Excelのシート構成やテーブル（ListObject）情報を抽出するクラス"""
     def __init__(self, workspace_dir, encoding="utf-8"):
@@ -276,3 +276,76 @@ class AccessDataSampler:
             return root_dir
         finally:
             access.Quit()
+
+class ExcelTableDataExtractor:
+    """Excelのテーブル（ListObject）の全データをMarkdown形式で抽出するクラス"""
+    def __init__(self, workspace_dir, encoding="utf-8"):
+        self.workspace_dir = Path(workspace_dir)
+        self.encoding = encoding
+
+    def extract(self, file_path):
+        file_path = os.path.abspath(file_path)
+        # 実データ用ディレクトリを作成
+        root_dir = self.workspace_dir / Path(file_path).stem / "table_values"
+        
+        if root_dir.exists():
+            shutil.rmtree(root_dir)
+        root_dir.mkdir(parents=True, exist_ok=True)
+
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = False
+        try:
+            wb = excel.Workbooks.Open(file_path, ReadOnly=True)
+            
+            for sheet in wb.Worksheets:
+                if sheet.ListObjects.Count > 0:
+                    for lo in sheet.ListObjects:
+                        table_name = lo.Name
+                        md_file = root_dir / f"{table_name}.md"
+                        
+                        try:
+                            # ヘッダー情報の取得
+                            headers = [str(cell.Value) if cell.Value is not None else "" for cell in lo.HeaderRowRange]
+                            
+                            # データ本体の取得 (DataBodyRange)
+                            data_rows = []
+                            if lo.DataBodyRange is not None:
+                                # Value は高速。タプル形式で返る
+                                vals = lo.DataBodyRange.Value
+                                if isinstance(vals, tuple):
+                                    for row in vals:
+                                        # 数値や None への対策
+                                        data_rows.append([str(v) if v is not None else "" for v in row])
+                                else:
+                                    # 1行のみの場合、vals はタプルではなく単一の値になることがある
+                                    data_rows.append([str(vals) if vals is not None else ""])
+
+                            # Markdownテーブルの生成
+                            md_lines = []
+                            md_lines.append(f"# Table: {table_name}")
+                            md_lines.append(f"- Sheet: {sheet.Name}")
+                            md_lines.append(f"- Range: {lo.Range.Address}")
+                            md_lines.append("")
+                            
+                            # ヘッダー行
+                            md_lines.append("| " + " | ".join(headers) + " |")
+                            # セパレーター
+                            md_lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+                            # データ行
+                            for row in data_rows:
+                                # 改行が含まれるとテーブルが壊れるため、簡易置換。
+                                clean_row = [v.replace("\r", " ").replace("\n", "<br>") for v in row]
+                                md_lines.append("| " + " | ".join(clean_row) + " |")
+                            
+                            with open(md_file, "w", encoding=self.encoding) as f:
+                                f.write("\n".join(md_lines))
+                                
+                            logger.info(f"テーブル '{table_name}' を Markdown として抽出しました。")
+                            
+                        except Exception as e:
+                            logger.warning(f"テーブル {table_name} のデータ抽出に失敗しました: {e}")
+
+            wb.Close(False)
+            return root_dir
+        finally:
+            excel.Quit()

@@ -8,7 +8,7 @@ import gc  # ガベージコレクション（メモリ解放）用に追加
 
 # 自作モジュールのインポート用パス設定
 sys.path.append(str(Path(__file__).parent.parent))
-from src.exporter import VBAExporter, AccessSQLExtractor, ExcelInfoExtractor, AccessDataSampler
+from src.exporter import VBAExporter, AccessSQLExtractor, ExcelInfoExtractor, AccessDataSampler, ExcelTableDataExtractor
 from src.git_handler import GitManager
 from src.history_mgr import HistoryManager
 
@@ -136,6 +136,10 @@ def main():
             logger.info("Excel構成情報の抽出を開始します...")
             excel_extractor = ExcelInfoExtractor(workspace_dir, encoding=other_enc)
             excel_extractor.extract(target_file)
+            
+            logger.info("Excelテーブルデータの抽出を開始します（AI解析用）...")
+            table_extractor = ExcelTableDataExtractor(workspace_dir, encoding=other_enc)
+            table_extractor.extract(target_file)
             # -----------------
 
         logger.success(f"エクスポート完了: {target_file}")
