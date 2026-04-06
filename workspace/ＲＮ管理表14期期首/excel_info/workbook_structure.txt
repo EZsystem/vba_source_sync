@@ -26,27 +26,29 @@ Excel File: ＲＮ管理表14期期首.xlsm
   └─ Table: xl_IcubeKanSum
      Range: $AT$6:$AY$37
      Columns: 施工管轄組織名, 完工期表示, 完工Q表示, 基本工事名_官民, 工事価格_合計, 粗利益額_合計
-  └─ Table: xl_IcubeJyuAllSum
-     Range: $BA$6:$BF$77
-     Columns: 施工管轄組織名, 受注期表示, 受注Q表示, 受注月表示, 工事価格_合計, 粗利益額_合計
-  └─ Table: xl_IcubeJyuKeitaAllSum
-     Range: $BH$6:$BL$17
-     Columns: 施工管轄組織名, 受注期表示, 受注形態区分名, 工事価格_合計, 粗利益額_合計
   └─ Table: xl_IcubeJyuMonSum
-     Range: $BN$6:$BV$86
+     Range: $BA$6:$BI$86
      Columns: 基本工事コード, 基本工事名称, 工事価格_合計, 粗利益額_合計, 施工管轄組織名, 受注期表示, 受注Q表示, 受注月表示, 基本工事名_官民
   └─ Table: xl_IcubeJyuKeitaSum
-     Range: $BX$6:$CB$15
+     Range: $BK$6:$BO$15
      Columns: 施工管轄組織名, 受注期表示, 受注形態区分名, 工事価格_合計, 粗利額
   └─ Table: xl_IcubeJyuMon2Sum
-     Range: $CD$6:$CK$77
+     Range: $BQ$6:$BX$77
      Columns: 基本工事コード, 基本工事名称, 工事価格_合計, 粗利益額_合計, 施工管轄組織名, 受注期表示, 受注Q表示, 受注月表示
   └─ Table: xl_IcubeJyu3year
-     Range: $CM$6:$CQ$233
+     Range: $BZ$6:$CD$233
      Columns: 受注期_, 完工期_, 受注月_, 完工月_, 工事価格の合計
   └─ Table: xl_IcubeJyu3yearKajyu
-     Range: $CS$6:$CW$150
+     Range: $CF$6:$CJ$150
      Columns: 予測ターゲット, 施工管轄組織名, Q, 受注月, 加重集計値
+
+■ Sheet: ac_受注予測 (Object: )
+  └─ Table: xl_JyuYosoku
+     Range: $B$7:$G$79
+     Columns: ID, 予測ターゲット, 施工管轄組織名, Q, 受注月, 加重集計値
+  └─ Table: xl_KanYosoku
+     Range: $I$7:$P$457
+     Columns: ID, 期_予測ターゲット, 施工管轄組織名, 受注月, 完工月, 元_受注予測額, 適用比率, 予測完工高
 
 ■ Sheet: 各県RNQ毎yobi (Object: Sheet03)
   (No Tables)
@@ -66,29 +68,23 @@ Excel File: ＲＮ管理表14期期首.xlsm
   (No Tables)
 
 ■ Sheet: 経費M (Object: sh_Ex_Master)
-  └─ Table: tbl_工事一覧
-     Range: $A$6:$G$65
-     Columns: s基本工事コード, 仮基本工事コード, s基本工事名称, 施工管轄組織名, 完工Q, 一件工事判定, 基本工事名_官民
-  └─ Table: tbl_兼務率人付き集計小口仮コード
-     Range: $I$6:$N$54
-     Columns: No, 仮コード, 工事名_小口工事_略称, Q, 職員数, 人員数
   └─ Table: xt_expFront
-     Range: $AI$6:$AL$14
+     Range: $T$6:$W$14
      Columns: ID, 期, 作業所名, 経費率
   └─ Table: xt_expBase
-     Range: $AN$6:$AQ$8
+     Range: $Y$6:$AB$8
      Columns: ID, 期, 経費名, 経費率
   └─ Table: xt_expDraftRate
-     Range: $AS$6:$AV$7
+     Range: $AD$6:$AG$7
      Columns: ID, 期, 経費名, 経費率
   └─ Table: xt_expFrontSum
-     Range: $AX$6:$AZ$13
+     Range: $AI$6:$AK$13
      Columns: ID, 作業所名, 経費率
   └─ Table: テーブル31
-     Range: $Q$6:$W$100
+     Range: $B$6:$H$100
      Columns: 仮基本工事コード, 工事名, 作業所名, 期, Q, 月, 金額(集計)
   └─ Table: xt_expEmpSumMon
-     Range: $Y$6:$AG$100
+     Range: $J$6:$R$100
      Columns: 期, Q, 月, 作業所名, 工事コード, 工事名, 想定給与額, 総合職数, 人員数
 
 ■ Sheet: 原価Data (Object: sh_Ex_Genka)
