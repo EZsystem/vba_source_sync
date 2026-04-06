@@ -8,13 +8,14 @@ Option Explicit
 ' 更新日         : 2026/04/03
 '===================================================================================================
 
-Private Const TARGET_TABLE As String = "at_Work_小口受注完工推移_3期分"
+' Private Const TARGET_TABLE As String = "at_Work_01_実績推移_3期分"
+Private Const TARGET_TABLE As String = AT_WORK_01_ACTUALS_3P
 
 '---------------------------------------------------------------------------------------------------
 ' プロシージャ名 : Run_Aggregator_Reset
 ' 概要           : 実績推移テーブルを最新の3期分で再構築します。
 '---------------------------------------------------------------------------------------------------
-Public Sub Run_Aggregator_Reset()
+Public Sub Run_Aggregator_Reset(Optional isBatch As Boolean = False)
     On Error GoTo Err_Handler
     Dim db As DAO.Database: Set db = CurrentDb
     
@@ -27,8 +28,10 @@ Public Sub Run_Aggregator_Reset()
     Call Aggregate_Actuals_To_Table(db)
     
     Debug.Print "--- 集計が正常に完了しました ---"
-    MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。" & vbCrLf & _
-           "内容をご確認ください。", vbInformation, "完了"
+    If Not isBatch Then
+        MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。" & vbCrLf & _
+               "内容をご確認ください。", vbInformation, "完了"
+    End If
     Exit Sub
 
 Err_Handler:

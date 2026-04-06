@@ -8,13 +8,14 @@ Option Explicit
 ' 更新日         : 2026/04/03
 '===================================================================================================
 
-Private Const TARGET_TABLE As String = "at_Work_受注完工予測_加重平均集計"
+' Private Const TARGET_TABLE As String = "at_Work_04_受注_今期予測"
+Private Const TARGET_TABLE As String = AT_WORK_04_ORDER_FCST
 
 '---------------------------------------------------------------------------------------------------
 ' プロシージャ名 : Run_Aggregator_Weighted_Reset
 ' 概要           : 加重平均集計テーブルを係数テーブルに基づいて再構築します。
 '---------------------------------------------------------------------------------------------------
-Public Sub Run_Aggregator_Weighted_Reset()
+Public Sub Run_Aggregator_Weighted_Reset(Optional isBatch As Boolean = False)
     On Error GoTo Err_Handler
     Dim db As DAO.Database: Set db = CurrentDb
     
@@ -27,8 +28,10 @@ Public Sub Run_Aggregator_Weighted_Reset()
     Call Aggregate_Weighted_To_Table(db)
     
     Debug.Print "--- 集計が正常に完了しました ---"
-    MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。" & vbCrLf & _
-           "内容をご確認ください。", vbInformation, "完了"
+    If Not isBatch Then
+        MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。" & vbCrLf & _
+               "内容をご確認ください。", vbInformation, "完了"
+    End If
     Exit Sub
 
 Err_Handler:

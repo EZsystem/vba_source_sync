@@ -8,15 +8,19 @@ Option Explicit
 ' 更新日         : 2026/04/03
 '===================================================================================================
 
-Private Const TARGET_TABLE As String = "at_Work_完工高予測3期平均"
-Private Const SRC_ACTUALS  As String = "at_Work_小口受注完工推移_3期分"
-Private Const SRC_FORECAST As String = "at_Work_受注完工予測_加重平均集計"
+' Private Const TARGET_TABLE As String = "at_Work_02_受注_3期平均"
+' Private Const SRC_ACTUALS  As String = "at_Work_01_実績推移_3期分"
+' Private Const SRC_FORECAST As String = "at_Work_04_受注_今期予測"
+
+Private Const TARGET_TABLE As String = AT_WORK_02_ORDER_3P_AVE
+Private Const SRC_ACTUALS  As String = AT_WORK_01_ACTUALS_3P
+Private Const SRC_FORECAST As String = AT_WORK_04_ORDER_FCST
 
 '---------------------------------------------------------------------------------------------------
 ' プロシージャ名 : Run_Final_Aggregation_Reset
 ' 概要           : 3期平均ロジックに基づき、完工高予測ベーステーブルを再構築します。
 '---------------------------------------------------------------------------------------------------
-Public Sub Run_Final_Aggregation_Reset()
+Public Sub Run_Final_Aggregation_Reset(Optional isBatch As Boolean = False)
     On Error GoTo Err_Handler
     Dim db As DAO.Database: Set db = CurrentDb
     
@@ -29,7 +33,9 @@ Public Sub Run_Final_Aggregation_Reset()
     Call Aggregate_Final_Baseline_3YearAverage(db)
     
     Debug.Print "--- 集計が正常に完了しました ---"
-    MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。", vbInformation, "完了"
+    If Not isBatch Then
+        MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。", vbInformation, "完了"
+    End If
     Exit Sub
 
 Err_Handler:
@@ -63,7 +69,7 @@ Private Sub Aggregate_Final_Baseline_3YearAverage(ByRef db As DAO.Database)
     Dim rsOut As DAO.Recordset
     Dim dictA_Sum As Object: Set dictA_Sum = CreateObject("Scripting.Dictionary")
     
-    ' �@ 履歴テーブルから「3期分すべて」の全社合計をメモリにロード
+    ' ?@ 履歴テーブルから「3期分すべて」の全社合計をメモリにロード
     ' 条件: 受注期 = 完工期 (同一期内完工レコード)
     Dim sqlA As String
     sqlA = "SELECT [受注月_], Sum([工事価格の合計]) AS 月実績合計 " & _
@@ -77,7 +83,7 @@ Private Sub Aggregate_Final_Baseline_3YearAverage(ByRef db As DAO.Database)
     Loop
     rsIn.Close
     
-    ' �A テーブルへの書き出し (4月始まり順)
+    ' ?A テーブルへの書き出し (4月始まり順)
     Set rsOut = db.OpenRecordset(TARGET_TABLE, dbOpenDynaset)
     Dim monthOrder As Variant: monthOrder = Array("4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "1月", "2月", "3月")
     

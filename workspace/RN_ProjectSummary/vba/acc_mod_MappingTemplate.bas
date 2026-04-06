@@ -37,6 +37,13 @@ Public Const AT_PROJECT_INFO As String = "at_工事コード情報"
 Public Const AT_EDABAN As String = "at_枝番工事"
 Public Const AT_LINK_KIHON_NAME As String = "at_基本工事名称_リンク"
 
+' --- 小口工事予測 (at_Work_01-05) ---
+Public Const AT_WORK_01_ACTUALS_3P As String = "at_Work_01_実績推移_3期分"
+Public Const AT_WORK_02_ORDER_3P_AVE As String = "at_Work_02_受注_3期平均"
+Public Const AT_WORK_03_COMP_RATIO As String = "at_Work_03_完工_推移割合"
+Public Const AT_WORK_04_ORDER_FCST As String = "at_Work_04_受注_今期予測"
+Public Const AT_WORK_05_COMP_FCST As String = "at_Work_05_完工_今期予測"
+
 ' --- Excel Sheet CodeNames & Sheet Names (内部オブジェクト名と見出し名) ---
 Public Const SH_CODE_EX_MASTER      As String = "sh_Ex_Master"     ' 経費M (オブジェクト名)
 Public Const SH_NAME_EX_MASTER      As String = "経費M"            ' 経費M (シート名)

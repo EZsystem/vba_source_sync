@@ -8,16 +8,21 @@ Option Explicit
 ' 更新日         : 2026/04/03
 '===================================================================================================
 
-Private Const TARGET_TABLE  As String = "at_Work_小口完工推移3期平均"
-Private Const SRC_HISTORY   As String = "at_Work_小口受注完工推移_3期分"
-Private Const SRC_FORECAST  As String = "at_Work_受注完工予測_加重平均集計"
-Private Const SRC_BASELINE  As String = "at_Work_完工高予測3期平均"
+' Private Const TARGET_TABLE  As String = "at_Work_03_完工_推移割合"
+' Private Const SRC_HISTORY   As String = "at_Work_01_実績推移_3期分"
+' Private Const SRC_FORECAST  As String = "at_Work_04_受注_今期予測"
+' Private Const SRC_BASELINE  As String = "at_Work_02_受注_3期平均"
+
+Private Const TARGET_TABLE  As String = AT_WORK_03_COMP_RATIO
+Private Const SRC_HISTORY   As String = AT_WORK_01_ACTUALS_3P
+Private Const SRC_FORECAST  As String = AT_WORK_04_ORDER_FCST
+Private Const SRC_BASELINE  As String = AT_WORK_02_ORDER_3P_AVE
 
 '---------------------------------------------------------------------------------------------------
 ' プロシージャ名 : Run_Transition_Aggregation_Reset
 ' 概要           : 実績推移データから、受注・完工月の組み合わせ別の3期平均値と割合を算出します。
 '---------------------------------------------------------------------------------------------------
-Public Sub Run_Transition_Aggregation_Reset()
+Public Sub Run_Transition_Aggregation_Reset(Optional isBatch As Boolean = False)
     On Error GoTo Err_Handler
     Dim db As DAO.Database: Set db = CurrentDb
     
@@ -30,7 +35,9 @@ Public Sub Run_Transition_Aggregation_Reset()
     Call Aggregate_Transition_Ratio_3YearAverage(db)
     
     Debug.Print "--- 集計が正常に完了しました ---"
-    MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。", vbInformation, "完了"
+    If Not isBatch Then
+        MsgBox "テーブル [" & TARGET_TABLE & "] の作成が完了しました。", vbInformation, "完了"
+    End If
     Exit Sub
 
 Err_Handler:
@@ -68,7 +75,7 @@ Private Sub Aggregate_Transition_Ratio_3YearAverage(ByRef db As DAO.Database)
     Dim dictBaseline As Object: Set dictBaseline = CreateObject("Scripting.Dictionary")
     Dim dictAgg As Object: Set dictAgg = CreateObject("Scripting.Dictionary")
     
-    ' �@ 分母となる「受注月ごとの3期平均実績」をメモリにロード
+    ' ?@ 分母となる「受注月ごとの3期平均実績」をメモリにロード
     Set rsBase = db.OpenRecordset("SELECT [受注月], [実績A_3期平均] FROM [" & SRC_BASELINE & "]", dbOpenSnapshot)
     Do While Not rsBase.EOF
         dictBaseline.Add Nz(rsBase![受注月]), Nz(rsBase![実績A_3期平均], 0)
@@ -76,7 +83,7 @@ Private Sub Aggregate_Transition_Ratio_3YearAverage(ByRef db As DAO.Database)
     Loop
     rsBase.Close
     
-    ' �A 履歴テーブルから「受注月×完工月」の全社合計をメモリにロード
+    ' ?A 履歴テーブルから「受注月×完工月」の全社合計をメモリにロード
     ' 条件: 受注期 = 完工期
     Dim sqlIn As String
     sqlIn = "SELECT [受注月_], [完工月_], Sum([工事価格の合計]) AS ペア実績合計 " & _
@@ -91,7 +98,7 @@ Private Sub Aggregate_Transition_Ratio_3YearAverage(ByRef db As DAO.Database)
     Loop
     rsIn.Close
     
-    ' �B テーブルへの書き出し
+    ' ?B テーブルへの書き出し
     Set rsOut = db.OpenRecordset(TARGET_TABLE, dbOpenDynaset)
     
     ' ターゲット期の特定
