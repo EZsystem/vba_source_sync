@@ -1,0 +1,280 @@
+Excel File: 長期修繕計画-ab.xlsm
+==================================================
+
+■ Sheet: 出力内訳og (Object: She06)
+  (No Tables)
+
+■ Sheet: ←今回対象外 (Object: Sheet2)
+  (No Tables)
+
+■ Sheet: _LauncherMenu (Object: Sheet4)
+  └─ Table: xt_LauncherMenu
+     Range: $B$6:$I$31
+     Columns: ID, TabCategory, DisplayName, MacroName, ModuleName, Description, PreProcess, IsVisible
+
+■ Sheet: 出力内訳og2 (Object: She07)
+  (No Tables)
+
+■ Sheet: 内訳og (Object: She01)
+  └─ Table: テーブル1
+     Range: $B$6:$V$10230
+     Columns: O-ID, Idpa, ID, 計画対象, 見積-大分類, 見積-中分類, 見積-小分類, 大分類, 中分類, 小分類, 番号, ＶＥＣＤ, 部位, 名称, 摘要, 見積数量, 単位, 見積単価, 見積金額, 備考, BELCAコード
+
+■ Sheet: 内訳-足場 (Object: Sheet3)
+  └─ Table: テーブル18
+     Range: $B$6:$O$82
+     Columns: O-ID, Idpa, ID, 計画対象, 見積-大分類, 見積-中分類, 名称, 摘要, 見積数量, 単位, 見積単価, 見積金額, 備考, BELCAコード
+
+■ Sheet: 内訳 (Object: She02)
+  └─ Table: tbl_内訳
+     Range: $B$6:$AO$2763
+     Columns: O-ID, Idpa, IDnew, 内訳ID, チェック, 大分類, 中分類, 小分類, 工種別分類,  名       称, 品質･形状寸法, 見積数量, 単位, 見積単価, 見積金額, 備考, BELCAコード, 種類, 修繕内容, 周期, 数量係数, 数量係数2, 単価係数, 単価係数2, 単価係数3, 数量, 単純単価, 単価, 金額, 更新周期, 材料率, 労務率, B内訳ID, B指摘20251120, B指摘20251127, AC指示20260310, AC指示20260408, BELCAMax, hikaku, ban
+
+■ Sheet: 内訳_dell (Object: )
+  └─ Table: tbl_内訳11
+     Range: $B$6:$AO$615
+     Columns: O-ID, Idpa, IDnew, 内訳ID, チェック, 大分類, 中分類, 小分類, 工種別分類,  名       称, 品質･形状寸法, 見積数量, 単位, 見積単価, 見積金額, 備考, BELCAコード, 種類, 修繕内容, 周期, 数量係数, 数量係数2, 単価係数, 単価係数2, 単価係数3, 数量, 単純単価, 単価, 金額, 更新周期, 材料率, 労務率, B内訳ID, B指摘20251120, B指摘20251127, AC指示20260310, AC指示20260408, BELCAMax, hikaku, ban
+
+■ Sheet: 分類 (Object: She04)
+  └─ Table: tbl_大分類
+     Range: $P$6:$Q$13
+     Columns: 大分類ID, 大分類
+  └─ Table: tbl_中分類
+     Range: $S$6:$U$30
+     Columns: 中分類Id, 大分類, 中分類
+  └─ Table: tbl_内訳ID
+     Range: $B$6:$N$77
+     Columns: 内訳ID, 中分類ID, 大分類, 中分類, 種類ID, 種類, 周期, 更新周期, era, 集計, 出力シート集計, 単ページ数, 累計ページ
+  └─ Table: テーブル8
+     Range: $W$6:$AB$79
+     Columns: 大分類, 中分類, 列1, 種類, 周期, 更新周期
+
+■ Sheet: BELCA (Object: She03)
+  └─ Table: tbl_修繕計画ID表
+     Range: $C$6:$AA$1156
+     Columns: ID, o-ID, ID子番号, BELCAコード, №A, 大分類, №B, 中分類, №C, 小分類, 単位, 寸法仕様, 更新年数B, 更新年数決定, 更新単価係数, 修繕内容, 修繕周期, 修繕周期決定, 修繕数量係数, 修繕数量決定係数, 修繕単価係数, 税法耐容年数, 材料比率, 労務比率, 備考
+
+■ Sheet: 出力範囲→ (Object: Sheet1)
+  (No Tables)
+
+■ Sheet: 計画表 (Object: She05)
+  (No Tables)
+
+■ Sheet: a1 (Object: She92)
+  (No Tables)
+
+■ Sheet: a2 (Object: She93)
+  (No Tables)
+
+■ Sheet: A01 (Object: She08)
+  (No Tables)
+
+■ Sheet: A02 (Object: She09)
+  (No Tables)
+
+■ Sheet: A03 (Object: She10)
+  (No Tables)
+
+■ Sheet: A04 (Object: She11)
+  (No Tables)
+
+■ Sheet: A05 (Object: She12)
+  (No Tables)
+
+■ Sheet: A06 (Object: She13)
+  (No Tables)
+
+■ Sheet: A07 (Object: She14)
+  (No Tables)
+
+■ Sheet: A08 (Object: She15)
+  (No Tables)
+
+■ Sheet: A09 (Object: She16)
+  (No Tables)
+
+■ Sheet: A10 (Object: She17)
+  (No Tables)
+
+■ Sheet: A11 (Object: She18)
+  (No Tables)
+
+■ Sheet: A12 (Object: She19)
+  (No Tables)
+
+■ Sheet: A13 (Object: She20)
+  (No Tables)
+
+■ Sheet: A14 (Object: She21)
+  (No Tables)
+
+■ Sheet: A15 (Object: She22)
+  (No Tables)
+
+■ Sheet: A16 (Object: She23)
+  (No Tables)
+
+■ Sheet: A17 (Object: She24)
+  (No Tables)
+
+■ Sheet: A18 (Object: She25)
+  (No Tables)
+
+■ Sheet: A19 (Object: She26)
+  (No Tables)
+
+■ Sheet: A20 (Object: She27)
+  (No Tables)
+
+■ Sheet: A21 (Object: She28)
+  (No Tables)
+
+■ Sheet: A22 (Object: She29)
+  (No Tables)
+
+■ Sheet: A23 (Object: She30)
+  (No Tables)
+
+■ Sheet: A24 (Object: She31)
+  (No Tables)
+
+■ Sheet: B01 (Object: She32)
+  (No Tables)
+
+■ Sheet: B02 (Object: She33)
+  (No Tables)
+
+■ Sheet: B03 (Object: She34)
+  (No Tables)
+
+■ Sheet: B04 (Object: She35)
+  (No Tables)
+
+■ Sheet: B05 (Object: She36)
+  (No Tables)
+
+■ Sheet: B06 (Object: She37)
+  (No Tables)
+
+■ Sheet: B07 (Object: She38)
+  (No Tables)
+
+■ Sheet: B08 (Object: She39)
+  (No Tables)
+
+■ Sheet: B09 (Object: She40)
+  (No Tables)
+
+■ Sheet: B10 (Object: She41)
+  (No Tables)
+
+■ Sheet: B11 (Object: She42)
+  (No Tables)
+
+■ Sheet: B12 (Object: She43)
+  (No Tables)
+
+■ Sheet: B13 (Object: She44)
+  (No Tables)
+
+■ Sheet: B14 (Object: She45)
+  (No Tables)
+
+■ Sheet: B15 (Object: She46)
+  (No Tables)
+
+■ Sheet: B16 (Object: She47)
+  (No Tables)
+
+■ Sheet: B17 (Object: She48)
+  (No Tables)
+
+■ Sheet: C01 (Object: She49)
+  (No Tables)
+
+■ Sheet: C02 (Object: She50)
+  (No Tables)
+
+■ Sheet: C03 (Object: She51)
+  (No Tables)
+
+■ Sheet: C04 (Object: She52)
+  (No Tables)
+
+■ Sheet: C05 (Object: She53)
+  (No Tables)
+
+■ Sheet: C06 (Object: She54)
+  (No Tables)
+
+■ Sheet: C07 (Object: She55)
+  (No Tables)
+
+■ Sheet: C08 (Object: She56)
+  (No Tables)
+
+■ Sheet: C09 (Object: She57)
+  (No Tables)
+
+■ Sheet: C10 (Object: She58)
+  (No Tables)
+
+■ Sheet: C11 (Object: She59)
+  (No Tables)
+
+■ Sheet: C12 (Object: She60)
+  (No Tables)
+
+■ Sheet: C13 (Object: She61)
+  (No Tables)
+
+■ Sheet: C14 (Object: She62)
+  (No Tables)
+
+■ Sheet: C15 (Object: She63)
+  (No Tables)
+
+■ Sheet: C16 (Object: She64)
+  (No Tables)
+
+■ Sheet: D01 (Object: She65)
+  (No Tables)
+
+■ Sheet: D02 (Object: She66)
+  (No Tables)
+
+■ Sheet: D03 (Object: She67)
+  (No Tables)
+
+■ Sheet: D04 (Object: She68)
+  (No Tables)
+
+■ Sheet: D05 (Object: She69)
+  (No Tables)
+
+■ Sheet: E01 (Object: She70)
+  (No Tables)
+
+■ Sheet: E02 (Object: She71)
+  (No Tables)
+
+■ Sheet: E03 (Object: She72)
+  (No Tables)
+
+■ Sheet: F01 (Object: She73)
+  (No Tables)
+
+■ Sheet: F02 (Object: She74)
+  (No Tables)
+
+■ Sheet: F03 (Object: She75)
+  (No Tables)
+
+■ Sheet: F04 (Object: She76)
+  (No Tables)
+
+■ Sheet: F05 (Object: She77)
+  (No Tables)
+
+■ Sheet: F06 (Object: She78)
+  (No Tables)

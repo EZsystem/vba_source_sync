@@ -65,9 +65,10 @@ Public Sub Execute_Excel_Data_Export()
         
         ' --- インテリジェント・マッピング (旧名やタブ名をCodeNameへ自動変換) ---
         Select Case snName
-            Case "xt", "経費M":  snName = SH_CODE_EX_MASTER
-            Case "原価Data":      snName = SH_CODE_EX_GENKA
-            Case "IcubeData":     snName = SH_CODE_EX_ICUBE
+            Case "xt", "経費M":      snName = SH_CODE_EX_MASTER
+            Case "原価Data":          snName = SH_CODE_EX_GENKA
+            Case "IcubeData":         snName = SH_CODE_EX_ICUBE
+            Case "ac_受注完工予測":    snName = SH_CODE_EX_FORECAST
         End Select
         
         Debug.Print "--- [ID:" & currentID & "] " & procName & " ---"
