@@ -16,92 +16,99 @@ Attribute VB_Exposed = False
 Option Explicit
 
 ' --- 内部保持変数 ---
-Private pIsBatchActive As Long       ' 0:通常(ポップアップ有), 1:一括(抑制)
+Private pIsBatchActive As Boolean    ' True:一括(抑制), False:通常(ポップアップ有)
 Private pErrorLogs     As Collection ' エラーメッセージ蓄積用
 
 '===========================================================
-' サブルーチン名 : Init
-' 引数 : isBatch - 一括実行モードにするか (Default: False)
-' 機能 : クラスの状態を初期化する。
+' 初期化メソッド (共通)
 '===========================================================
 Public Sub Init(Optional ByVal isBatch As Boolean = False)
-    If isBatch Then
-        pIsBatchActive = 1
-    Else
-        pIsBatchActive = 0
-    End If
+    pIsBatchActive = isBatch
     Set pErrorLogs = New Collection
 End Sub
 
+' Kenmu_Transcribe 等で期待される別名
+Public Sub Initialize(Optional ByVal debugMode As Boolean = False)
+    Call Init(isBatch:=debugMode)
+End Sub
+
 '===========================================================
-' プロパティ Let/Get : IsBatchActive
-' 機能 : 実行モードを動的に切り替える。
+' プロパティ
 '===========================================================
 Public Property Let IsBatchActive(ByVal val As Boolean)
-    If val Then pIsBatchActive = 1 Else pIsBatchActive = 0
+    pIsBatchActive = val
 End Property
-
 Public Property Get IsBatchActive() As Boolean
-    IsBatchActive = (pIsBatchActive = 1)
+    IsBatchActive = pIsBatchActive
+End Property
+
+Public Property Get ErrorCount() As Long
+    If pErrorLogs Is Nothing Then ErrorCount = 0 Else ErrorCount = pErrorLogs.count
 End Property
 
 '===========================================================
-' サブルーチン名 : Notify_Smart_Popup
-' 引数 : msg   - 通知内容
-'        title - ポップアップのタイトル
-'        level - vbInformation, vbExclamation, vbCritical 等
-' 機能 : モードに応じて即時ポップアップ、またはログ蓄積を行う。
+' 通知・ログ記録メソッド
 '===========================================================
+
+' 旧来のログ記録メソッド (互換性維持用)
+Public Sub LogError(ByVal title As String, ByVal msg As String)
+    If pErrorLogs Is Nothing Then Set pErrorLogs = New Collection
+    pErrorLogs.Add "[" & Format(Now, "hh:nn:ss") & "] " & title & ": " & msg
+    Debug.Print "LogError: " & title & " - " & msg
+End Sub
+
+' 新しいスマートポップアップ通知
 Public Sub Notify_Smart_Popup(ByVal msg As String, _
                              Optional ByVal title As String = "System Notification", _
                              Optional ByVal level As VbMsgBoxStyle = vbInformation)
     
-    ' ログには常に記録
+    If pErrorLogs Is Nothing Then Set pErrorLogs = New Collection
     pErrorLogs.Add "[" & Format(Now, "hh:nn:ss") & "] " & msg
     
     ' バッチモードでない場合のみポップアップを表示
-    If pIsBatchActive = 0 Then
+    If Not pIsBatchActive Then
         MsgBox msg, level, title
     Else
-        ' バッチモード時はデバッグウィンドウに出力して進行を止めない
         Debug.Print "Batch Log: " & msg
     End If
 End Sub
 
 '===========================================================
-' 関数名 : Get_Summary
-' 戻り値 : 蓄積された全ログの結合文字列
-' 機能 : 蓄積されたログを改行区切りで返す。
+' ユーティリティ
 '===========================================================
 Public Function Get_Summary() As String
-    If pErrorLogs.count = 0 Then
+    If pErrorLogs Is Nothing Or pErrorLogs.count = 0 Then
         Get_Summary = "No errors or notifications logged."
         Exit Function
     End If
     
-    Dim i As Long
-    Dim summary As String
+    Dim i As Long: Dim summary As String
     For i = 1 To pErrorLogs.count
         summary = summary & pErrorLogs(i) & vbCrLf
     Next i
     Get_Summary = summary
 End Function
 
-'===========================================================
-' サブルーチン名 : Show_Final_Report
-' 機能 : 蓄積されたログがあれば最後に一括で表示する。
-'===========================================================
+' 旧来の全エラー表示メソッド (互換性維持用)
+Public Sub ShowAllErrors(Optional ByVal showInMsgBox As Boolean = True)
+    If ErrorCount > 0 Then
+        If showInMsgBox Then
+            MsgBox "以下のエラー・通知が発生しました：" & vbCrLf & vbCrLf & Get_Summary(), _
+                   vbInformation, "エラーログ一括表示"
+        Else
+            Debug.Print Get_Summary()
+        End If
+    End If
+End Sub
+
+' 最終レポート表示
 Public Sub Show_Final_Report()
-    If pErrorLogs.count > 0 And pIsBatchActive = 1 Then
+    If ErrorCount > 0 And pIsBatchActive Then
         MsgBox "バッチ処理中に以下の通知が発生しました：" & vbCrLf & vbCrLf & Get_Summary(), _
                vbInformation, "処理完了レポート"
     End If
 End Sub
 
-'===========================================================
-' サブルーチン名 : Clear_Logs
-' 機能 : 蓄積されたログを消去する。
-'===========================================================
 Public Sub Clear_Logs()
     Set pErrorLogs = New Collection
 End Sub

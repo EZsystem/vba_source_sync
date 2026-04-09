@@ -71,7 +71,7 @@ Public Sub Run_Kenmu_Import_EZ(Optional ByVal callingID As Long = 0)
     ' 第一工程：暫定テーブルのクリアとインポート
     db.Execute "DELETE * FROM [" & AT_KENMU_TEMP & "];", dbFailOnError
     
-    importer.Init
+    importer.Init db
     importer.TempTableName = AT_KENMU_TEMP
     
     For Each fileItem In selectedFiles
@@ -119,11 +119,11 @@ Public Sub Run_Kenmu_Import_EZ(Optional ByVal callingID As Long = 0)
 
 CleanUp:
     On Error Resume Next
+    Call Fast_Mode_Toggle(False, xlApp)
     If Not xlApp Is Nothing Then
         xlApp.Quit
         Set xlApp = Nothing
     End If
-    Call Fast_Mode_Toggle(False)
     Exit Sub
 
 ErrLine:

@@ -33,7 +33,14 @@ Public Sub ExecuteTaskByID(ByVal taskID As Long)
     Select Case rs!ファイル種別
         Case "Access(自)"
             ' 自ファイルのマクロを実行
-            Application.Run rs!実行マクロ名
+            Select Case rs!実行マクロ名
+                Case "Run_Kenmu_Import_EZ", "Export_Sum_To_Excel"
+                    ' ID連動型の内部関数として実行
+                    Application.Run rs!実行マクロ名, taskID
+                Case Else
+                    ' 通常のマクロとして実行
+                    Application.Run rs!実行マクロ名
+            End Select
             
         Case "Access(クエリ)"
             ' クエリをデータシートビューで開く

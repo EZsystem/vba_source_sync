@@ -208,19 +208,3 @@ Private Sub ClearListObject_LeaveOneRow(ByRef ws As Object, ByVal tblName As Str
     End If
 End Sub
 
-'----------------------------------------------------------------
-' 関数名 : G_GetSheetByCodeName (ハイブリッド検索)
-'----------------------------------------------------------------
-Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal nameOrCode As String) As Object
-    Dim sh As Object
-    For Each sh In wb.Sheets
-        If sh.codeName = nameOrCode Then
-            Set G_GetSheetByCodeName = sh
-            Exit Function
-        End If
-    Next sh
-    
-    On Error Resume Next
-    Set G_GetSheetByCodeName = wb.Sheets(nameOrCode)
-    On Error GoTo 0
-End Function

@@ -133,3 +133,23 @@ Public Sub Sync_Registry_Path(ByVal taskID As Long, ByVal newPath As String)
     sql = "UPDATE [_at_SystemRegistry] SET [既定パス] = '" & Replace(newPath, "'", "''") & "' WHERE [ID] = " & taskID
     db.Execute sql, dbFailOnError
 End Sub
+
+'--------------------------------------------
+' 関数名： G_GetSheetByCodeName
+' 概要： 指定したExcelブックの中から、CodeName（オブジェクト名）またはシート名を基にシートを特定する
+'--------------------------------------------
+Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal nameOrCode As String) As Object
+    Dim sh As Object
+    ' 1. オブジェクト名（CodeName）で検索
+    For Each sh In wb.Sheets
+        If sh.codeName = nameOrCode Then
+            Set G_GetSheetByCodeName = sh
+            Exit Function
+        End If
+    Next sh
+    
+    ' 2. 見つからない場合はシート名（見出し名）で検索
+    On Error Resume Next
+    Set G_GetSheetByCodeName = wb.Sheets(nameOrCode)
+    On Error GoTo 0
+End Function
