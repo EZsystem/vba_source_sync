@@ -75,53 +75,69 @@ Public Sub ImportFromWorksheet(ByVal ws As Object)
 End Sub
 
 '===========================================================
-' メソッド : ImportUnpivotedData (兼務率等の横持ち→縦持ち用)
+' メソッド : ImportUnpivotedData (原本準拠：横に並んだ社員を縦に展開)
 '===========================================================
 Public Sub ImportUnpivotedData(ByVal lo As Object, ByVal worksiteName As String, ByVal filePath As String)
     Dim rs      As DAO.Recordset
-    Dim rowObj  As Object
-    Dim col     As Object
-    Dim baseID  As Long
-    Dim rIdx    As Long
+    Dim dataArr As Variant
+    Dim r As Long, c As Long
+    Dim colName As String
+    Dim colNorm As String
     
-    ' UNIQUE ID生成ベース (ddHHmm)
-    ' ※MMddHHmm(12312359)だと 12,312,359 * 1000 で Long(21億) を超えるリスクがあるため ddHHmm に短縮
-    baseID = CLng(Format(Now, "ddHHmm"))
+    ' 固定列のインデックスを取得（Normalize_Textを使用して表記揺れを吸収）
+    Dim idxNo     As Long: idxNo = Get_ColumnIndex_Robust(lo, "No")
+    Dim idxDate   As Long: idxDate = Get_ColumnIndex_Robust(lo, "年月")
+    Dim idxCode   As Long: idxCode = Get_ColumnIndex_Robust(lo, "工事コード")
+    Dim idxName   As Long: idxName = Get_ColumnIndex_Robust(lo, "工事名")
+    Dim idxComm   As Long: idxComm = Get_ColumnIndex_Robust(lo, "コメント")
     
-    Set rs = pConn.OpenRecordset(pTableName, 2)
+    ' テーブルを一括取得（高速化のため配列で処理）
+    dataArr = lo.DataBodyRange.Value
+    Set rs = pConn.OpenRecordset(pTableName, 2) ' 2 = dbOpenDynaset
     
-    For Each rowObj In lo.ListRows
-        rIdx = rIdx + 1
-        For Each col In lo.ListColumns
-            ' 列名が日付形式（年月）か判定
-            If IsDate(col.Name) Then
-                Dim val As Variant
-                val = rowObj.Range(col.Index).Value
+    ' 行ループ
+    For r = 1 To UBound(dataArr, 1)
+        ' 列ループ (社員名が並んでいる列を走査)
+        For c = 1 To lo.ListColumns.count
+            colName = lo.ListColumns(c).Name
+            colNorm = Normalize_Text(colName)
+            
+            ' 固定項目以外の列を「社員名」として扱う
+            If colNorm <> "" And _
+               colNorm <> Normalize_Text("No") And _
+               colNorm <> Normalize_Text("年月") And _
+               colNorm <> Normalize_Text("工事コード") And _
+               colNorm <> Normalize_Text("工事名") And _
+               colNorm <> Normalize_Text("コメント") Then
                 
-                ' 値がある場合のみ、縦持ちレコードとして追加
-                If Nz(val, 0) <> 0 Then
+                ' 兼務率の値がある場合のみ、縦持ちレコードを作成
+                If Nz(dataArr(r, c), 0) <> 0 Then
                     rs.AddNew
-                    ' ID: 時刻ベース + 3桁行番号 (21億の制限内)
-                    rs!ImportID = (baseID * 1000) + (rIdx Mod 1000)
+                    
+                    ' ユニークIDの取得 (共通関数を使用)
+                    rs!ImportID = Fetch_New_ImportID()
+                    
+                    ' 共通情報
                     rs!作業所名 = worksiteName
                     rs!元ファイルパス = filePath
-                    rs!年月 = col.Name
                     
-                    ' 列名指定で基本項目を取得 (On Error Resume Next で存在しない列を回避)
-                    On Error Resume Next
-                    rs!No = rowObj.Range(lo.ListColumns("No").Index).Value
-                    rs!工事コード = rowObj.Range(lo.ListColumns("工事コード").Index).Value
-                    rs!工事名 = rowObj.Range(lo.ListColumns("工事名").Index).Value
-                    rs!コメント = rowObj.Range(lo.ListColumns("コメント").Index).Value
-                    rs!社員名 = rowObj.Range(lo.ListColumns("社員名").Index).Value
-                    rs!兼務率割合 = val
-                    On Error GoTo 0
+                    ' 行データからの転記
+                    If idxDate > 0 Then rs!年月 = dataArr(r, idxDate)
+                    If idxNo > 0 Then rs!No = dataArr(r, idxNo)
+                    If idxCode > 0 Then rs!工事コード = dataArr(r, idxCode)
+                    If idxName > 0 Then rs!工事名 = dataArr(r, idxName)
+                    If idxComm > 0 Then rs!コメント = dataArr(r, idxComm)
+                    
+                    ' 列ヘッダーからの転記
+                    rs!社員名 = colName
+                    rs!兼務率割合 = dataArr(r, c)
                     
                     rs.Update
                 End If
             End If
-        Next col
-    Next rowObj
+        Next c
+    Next r
+    
     rs.Close
 End Sub
 

@@ -80,9 +80,8 @@ Public Sub Run_Kenmu_Import_EZ(Optional ByVal callingID As Long = 0)
         
         Set wb = xlApp.Workbooks.Open(fileItem, ReadOnly:=True)
         
-        On Error Resume Next
-        Set ws = wb.Worksheets(SH_NAME_KENMU)
-        On Error GoTo ErrLine
+        ' シート特定（シート名またはオブジェクト名 Sheet1 で検索）
+        Set ws = G_GetSheetByCodeName(wb, SH_NAME_KENMU)
         
         If ws Is Nothing Then Err.Raise 999, , "シート「" & SH_NAME_KENMU & "」が見つかりません: " & fileName
         
@@ -137,13 +136,16 @@ ErrLine:
     ' 特定のエラー番号に対する詳細メッセージ
     Dim customMsg As String
     If errNum = 3022 Then
-        customMsg = "【ID重複エラー】既に取り込まれている累計データ、または他ファイルと ID(ImportID) が重複しています。"
+        customMsg = "【ID重複エラー】既に取り込まれている累計データと ID が重複しました。一度テーブルをクリアするか、時間を置いて再試行してください。"
+    ElseIf errNum = 3078 Then
+        customMsg = "【テーブル不在】インポート先のテーブル名が正しくありません。"
     Else
         customMsg = "エラー内容(" & errNum & "): " & errDesc
     End If
     
     MsgBox "【インポート中断】" & vbCrLf & _
            "ファイル: " & fileName & vbCrLf & _
+           "処理位置: " & IIf(ws Is Nothing, "シート確認中", "データ読込中") & vbCrLf & _
            customMsg, vbCritical
     Resume CleanUp
 End Sub

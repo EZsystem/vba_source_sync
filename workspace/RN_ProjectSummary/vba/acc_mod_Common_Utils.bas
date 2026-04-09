@@ -153,3 +153,29 @@ Public Function G_GetSheetByCodeName(ByRef wb As Object, ByVal nameOrCode As Str
     Set G_GetSheetByCodeName = wb.Sheets(nameOrCode)
     On Error GoTo 0
 End Function
+
+'--------------------------------------------
+' 関数名： Fetch_New_ImportID
+' 概要： 重複しない一意な数字IDを生成する (Access Long型 21億の制限内)
+' 設計： 月(2桁) + 日(2桁) + 連番(6桁) で構成
+'--------------------------------------------
+Public Function Fetch_New_ImportID() As Long
+    Static s_counter As Long
+    Dim basePart As Long
+    
+    ' 月・日 をベースに作成 (例: 4月9日 -> 0409000000)
+    basePart = CLng(Month(Now)) * 100 + CLng(Day(Now))
+    
+    ' セッション内連番をインクリメント
+    If s_counter = 0 Then
+        ' 初回のみ、現在の時分秒をシード値に近い形で足すか、シンプルに1から開始
+        s_counter = 1
+    Else
+        s_counter = s_counter + 1
+    End If
+    
+    ' 合体させて 10桁の数字にする (最大 1231 + 999999)
+    ' Long型の最大 2,147,483,647 を超えないよう、ベースを100万倍にする
+    ' 1231 * 1,000,000 + 999,999 = 1,231,999,999 (OK)
+    Fetch_New_ImportID = (basePart * 1000000) + s_counter
+End Function

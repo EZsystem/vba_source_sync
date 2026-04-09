@@ -26,15 +26,19 @@ Public Sub Export_Sum_To_Excel(Optional ByVal callingID As Long = 0)
     
     ' 1.5 レジストリから出力先フォルダを取得
     Dim exportRoot As String: exportRoot = ""
-    If callingID > 0 Then
-        Set rsFiles = db.OpenRecordset("SELECT [既定パス] FROM [" & AT_SYSTEM_REG & "] WHERE ID = " & callingID, dbOpenSnapshot)
-        If Not rsFiles.EOF Then
-            exportRoot = Nz(rsFiles![既定パス], "")
-        End If
-        rsFiles.Close
+    Dim targetID As Long: targetID = IIf(callingID > 0, callingID, 42) ' 42番(兼務率エクスポート)をデフォルトにする
+    
+    Set rsFiles = db.OpenRecordset("SELECT [既定パス] FROM [" & AT_SYSTEM_REG & "] WHERE ID = " & targetID, dbOpenSnapshot)
+    If Not rsFiles.EOF Then
+        exportRoot = Nz(rsFiles![既定パス], "")
     End If
+    rsFiles.Close
 
     On Error GoTo ErrLine
+    
+    ' Excelの起動
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
     
     ' 2. ユニークな元ファイルパスのリストを取得
     Set rsFiles = db.OpenRecordset( _

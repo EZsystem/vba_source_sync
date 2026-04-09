@@ -32,15 +32,15 @@ Public Sub Final_Registry_Sync_v3_2()
     Call FullIns(db, 11, pn, "q_受注_月計_形態別_小口", "SELECT at_Icube_累計.施工管轄組織名, ([受注期] & '期') AS 受注期表示, ([受注Q] & 'Q') AS 受注Q表示, [受注月] & '月' AS 受注月表示, at_Icube_累計.受注形態名, Sum(at_Icube_累計.工事価格) AS 工事価格_合計, Sum(at_Icube_累計.粗利益額) AS 粗利益額_合計 FROM at_Icube_累計 WHERE (((at_Icube_累計.施工管轄組織名)<>'ビルサービスグループ') AND ([受注期]=Val(Replace('{TERM}','期',''))) AND ((at_Icube_累計.所属組織名)='ＬＣＳ事業部') AND ((at_Icube_累計.一件工事判定)<>'一件工事')) GROUP BY at_Icube_累計.施工管轄組織名, ([受注期] & '期'), ([受注Q] & 'Q'), [受注月] & '月', at_Icube_累計.受注形態名;", p, "IcubeData", "xl_IcubeJyuKeitaSum")
     Call FullIns(db, 12, pn, "q_受注_月計_区分なし", "SELECT at_Icube_累計.施工管轄組織名, ([受注期] & '期') AS 受注期表示, ([受注Q] & 'Q') AS 受注Q表示, [受注月] & '月' AS 受注月表示, Sum(at_Icube_累計.工事価格) AS 工事価格_合計, Sum(at_Icube_累計.粗利益額) AS 粗利益額_合計 FROM at_Icube_累計 WHERE (((at_Icube_累計.施工管轄組織名)<>'ビルサービスグループ') AND ([受注期]=Val(Replace('{TERM}','期',''))) AND ((at_Icube_累計.所属組織名)='ＬＣＳ事業部') AND ((at_Icube_累計.一件工事判定)<>'一件工事')) GROUP BY at_Icube_累計.施工管轄組織名, ([受注期] & '期'), ([受注Q] & 'Q'), [受注月] & '月';", p, "IcubeData", "xl_IcubeJyuMon2Sum")
     Call FullIns(db, 13, pn, "q_小口受注完工推移_3期分", "SELECT [施工管轄組織名], [受注期] & '期' AS 期, Sum([工事価格]) AS 合計工事価格, Sum([粗利益額]) AS 合計粗利益額 FROM at_Icube_累計 WHERE ([一件工事判定] = '小口工事') AND ([所属組織名] = 'ＬＣＳ事業部') GROUP BY [施工管轄組織名], [受注期];", p, "IcubeData", "xl_IcubeJyu3year")
-    Call FullIns(db, 14, pn, "q_受注完工予測_加重平均集計", "SELECT * FROM at_Work_受注完工予測_加重平均集計;", p, "IcubeData", "xl_IcubeJyu3yearKajyu")
+    Call FullIns(db, 14, pn, "q_04_受注_今期予測", "SELECT * FROM at_Work_04_受注_今期予測;", p, "IcubeData", "xl_IcubeJyu3yearKajyu")
     
     ' --- 5. 経費・予測シート (新規) ---
     Call FullIns(db, 15, pn, "sqlSum_給与経費月毎", "", p, "経費M", "xt_expSumMon")
     Call FullIns(db, 16, pn, "sqlSum_兼務率職員単位月毎", "", p, "経費M", "xt_expEmpSumMon")
 
     ' --- ★予測テーブルの絞り込みエクスポート設定 ---
-    Call FullIns(db, 17, pn, "at_Work_受注完工予測_加重平均集計", "SELECT * FROM [at_Work_受注完工予測_加重平均集計] WHERE [予測ターゲット] LIKE '{TERM}*';", p, "ac_受注完工予測", "xt_JyuYosoku")
-    Call FullIns(db, 18, pn, "at_Work_予測完工高_最終結果", "SELECT * FROM [at_Work_予測完工高_最終結果] WHERE [期_予測ターゲット] LIKE '{TERM}*';", p, "ac_受注完工予測", "xt_KanYosoku")
+    Call FullIns(db, 17, pn, "at_Work_04_受注_今期予測", "SELECT * FROM [at_Work_04_受注_今期予測] WHERE [予測ターゲット] LIKE '{TERM}*';", p, "ac_受注完工予測", "xt_JyuYosoku")
+    Call FullIns(db, 18, pn, "at_Work_05_完工_今期予測", "SELECT * FROM [at_Work_05_完工_今期予測] WHERE [期_予測ターゲット] LIKE '{TERM}*';", p, "ac_受注完工予測", "xt_KanYosoku")
     
     Call FullIns(db, 19, pn, "q_繰越工事集計", "SELECT [at_Icube_累計].[施工管轄組織名], [at_Icube_累計].[完工期] & '期' AS 期, Sum([at_Icube_累計].[工事価格]) AS 合計工事価格, Sum([at_Icube_累計].[粗利益額]) AS 合計粗利益額 FROM at_Icube_累計 WHERE ([at_Icube_累計].[一件工事判定] = '小口工事') AND ([at_Icube_累計].[基本工事名_繰越] = '(繰越)') AND ([at_Icube_累計].[所属組織名] = 'ＬＣＳ事業部') AND ([at_Icube_累計].[完工期] = Val(Replace('{TERM}','期',''))) GROUP BY [at_Icube_累計].[施工管轄組織名], [at_Icube_累計].[完工期];", p, "ac_受注完工予測", "xt_JyuKuri")
     Call FullIns(db, 20, pn, "(未作成)", "", p, "ac_受注完工予測", "xt_expSumKisyu")

@@ -1,3 +1,3 @@
 SELECT *
 FROM at_expFront
-WHERE (期)='13期';
+WHERE (期)='14期';
