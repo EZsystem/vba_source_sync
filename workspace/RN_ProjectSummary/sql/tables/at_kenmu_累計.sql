@@ -1,0 +1,16 @@
+CREATE TABLE [at_kenmu_累計] (
+    [ImportID] LONG,
+    [No] TEXT,
+    [年月] DATETIME,
+    [工事コード] TEXT,
+    [工事名] TEXT,
+    [コメント] TEXT,
+    [社員名] TEXT,
+    [兼務率割合] DOUBLE,
+    [作業所名] TEXT,
+    [元ファイルパス] TEXT,
+    [期] TEXT,
+    [Q] TEXT,
+    [仮基本工事コード] TEXT,
+    CONSTRAINT PK_at_kenmu_累計 PRIMARY KEY ([ImportID])
+);

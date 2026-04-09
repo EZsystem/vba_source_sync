@@ -71,7 +71,7 @@ Public Sub Sync_Vba_Project()
             Call AtomicRemove_Silent(vbeProj.VBComponents(targetName & "1"))
             On Error GoTo Err_Handler
             
-            Call ImportFromUtf8(vbeProj, fileObj.Path)
+            Call ImportFromUtf8(vbeProj, fileObj.path)
             updateCount = updateCount + 1
         End If
     Next
