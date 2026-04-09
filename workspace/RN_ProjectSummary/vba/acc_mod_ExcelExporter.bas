@@ -204,7 +204,7 @@ Private Sub ClearListObject_LeaveOneRow(ByRef ws As Object, ByVal tblName As Str
         If lo.ListRows.count > 1 Then
             lo.DataBodyRange.Offset(1, 0).Resize(lo.ListRows.count - 1).Delete
         End If
-        lo.DataBodyRange.Rows(1).ClearContents
+        lo.DataBodyRange.rows(1).ClearContents
     End If
 End Sub
 

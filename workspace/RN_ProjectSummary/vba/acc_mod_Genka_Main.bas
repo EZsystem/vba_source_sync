@@ -88,7 +88,7 @@ Private Function Import_Excel_To_Temp() As Boolean
     Dim snActual As String
     snActual = xlSheet.Name
     
-    lastRow = xlSheet.Cells(xlSheet.Rows.count, 1).End(-4162).Row
+    lastRow = xlSheet.Cells(xlSheet.rows.count, 1).End(-4162).Row
     xlBook.Close False
     xlApp.Quit
     

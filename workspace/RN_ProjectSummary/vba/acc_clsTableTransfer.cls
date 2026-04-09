@@ -26,14 +26,14 @@ Attribute VB_Exposed = False
 '===========================================================
 Option Explicit
 
-Private pDb As DAO.Database
+Private pDB As DAO.Database
 Private pCleaner As acc_clsDataCleaner
 
 '===========================================================
 ' メソッド : Init
 '===========================================================
 Public Sub Init(ByRef db As DAO.Database)
-    Set pDb = db
+    Set pDB = db
     Set pCleaner = New acc_clsDataCleaner
     pCleaner.Init
 End Sub
@@ -53,8 +53,8 @@ Public Sub ExecuteTransferWithRules(ByVal src As String, ByVal tgt As String, By
     sql = "SELECT * FROM [" & src & "]"
     If criteria <> "" Then sql = sql & " WHERE " & criteria
     
-    Set rsSrc = pDb.OpenRecordset(sql, dbOpenSnapshot)
-    Set rsTgt = pDb.OpenRecordset(tgt, dbOpenDynaset)
+    Set rsSrc = pDB.OpenRecordset(sql, dbOpenSnapshot)
+    Set rsTgt = pDB.OpenRecordset(tgt, dbOpenDynaset)
     
     ' 2. レコードループ
     Do Until rsSrc.EOF
@@ -119,12 +119,12 @@ Public Sub ExecuteTransfer(ByVal SrcTable As String, ByVal tgtTable As String, O
     Else
         sqlDel = "DELETE FROM [" & tgtTable & "];"
     End If
-    pDb.Execute sqlDel, 128 ' dbFailOnError
+    pDB.Execute sqlDel, 128 ' dbFailOnError
 
     ' 一括挿入
     Dim sqlIns As String
     sqlIns = "INSERT INTO [" & tgtTable & "] (" & insertFields & ") SELECT " & selectFields & " FROM [" & SrcTable & "];"
-    pDb.Execute sqlIns, 128
+    pDB.Execute sqlIns, 128
 End Sub
 
 ' --- 内部補助関数：型変換ロジック ---
@@ -151,8 +151,8 @@ End Function
 
 ' --- 内部補助関数：SQL用フィールドリスト作成 ---
 Private Sub GetFieldLists_Internal(ByVal src As String, ByVal tgt As String, ByRef outInsert As String, ByRef outSelect As String)
-    Dim fldsSrc As DAO.Fields: Set fldsSrc = pDb.TableDefs(src).Fields
-    Dim fldsTgt As DAO.Fields: Set fldsTgt = pDb.TableDefs(tgt).Fields
+    Dim fldsSrc As DAO.Fields: Set fldsSrc = pDB.TableDefs(src).Fields
+    Dim fldsTgt As DAO.Fields: Set fldsTgt = pDB.TableDefs(tgt).Fields
     Dim fSrc As DAO.Field, fTgt As DAO.Field
     Dim insList As String: insList = ""
     Dim selList As String: selList = ""
