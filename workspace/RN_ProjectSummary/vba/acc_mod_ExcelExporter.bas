@@ -176,7 +176,10 @@ Private Sub TransferQueryToExcelTable(ByRef db As DAO.Database, ByRef ws As Obje
     End If
     On Error GoTo 0
     
-    ' --- A. データの事前取得 ---
+    ' --- A. データの事前取得と既存データのクリア ---
+    ' 0件の場合でも直前のデータが残らないように、まずExcelテーブルをクリアする
+    Call ClearListObject_LeaveOneRow(ws, tblName)
+    
     If rs.EOF Then
         Debug.Print "      [INFO] 対象レコードが0件です。"
         rs.Close: Exit Sub
@@ -245,8 +248,8 @@ Private Sub TransferQueryToExcelTable(ByRef db As DAO.Database, ByRef ws As Obje
     Next r
     
     ' --- D. Excelへの一括貼り付け ---
-    ' 既存データのクリア
-    Call ClearListObject_LeaveOneRow(ws, tblName)
+    ' (事前クリアは A の段階で実施済み)
+
     
     ' テーブルのリサイズ（行数に合わせて拡張）
     Dim startCell As Object: Set startCell = lo.HeaderRowRange.Cells(1, 1)

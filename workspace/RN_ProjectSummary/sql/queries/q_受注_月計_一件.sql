@@ -1,1 +1,4 @@
-SELECT [at_Icube_累計].工事コード, First([at_Icube_累計].工事名称) AS 工事名称, Sum([at_Icube_累計].工事価格) AS 工事価格_合計, Sum([at_Icube_累計].粗利益額) AS 粗利益額_合計, First([at_Icube_累計].施工管轄組織名) AS 施工管轄組織名, First([受注期] & '期') AS 受注期表示, First([受注Q] & 'Q') AS 受注Q表示, [受注月] & '月' AS 受注月表示;
+SELECT at_Icube_累計.工事コード, First(at_Icube_累計.工事名称) AS [工事名称 ], Sum(at_Icube_累計.工事価格) AS 工事価格_合計, Sum(at_Icube_累計.粗利益額) AS 粗利益額_合計, at_Icube_累計.施工管轄組織名, (受注期 & '期') AS 受注期表示, (受注Q & 'Q') AS 受注Q表示, (受注月 & '月') AS 受注月表示
+FROM at_Icube_累計
+WHERE (施工管轄組織名 <> 'ビルサービスグループ') AND (受注期 = Val(Replace('14期','期',''))) AND (所属組織名 = 'ＬＣＳ事業部') AND (一件工事判定 = '一件工事')
+GROUP BY 工事コード, 施工管轄組織名, 受注期, 受注Q, 受注月;
