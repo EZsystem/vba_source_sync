@@ -43,6 +43,9 @@ Public Const AT_WORK_03_COMP_RATIO As String = "at_Work_03_完工_推移割合"
 Public Const AT_WORK_04_ORDER_FCST As String = "at_Work_04_受注_今期予測"
 Public Const AT_WORK_05_COMP_FCST As String = "at_Work_05_完工_今期予測"
 
+' --- 最終集計結果 ---
+Public Const AT_WORK_FINAL_AGGREGATION As String = "at_Work_給与経費集計_結果"
+
 ' --- Excel Sheet CodeNames & Sheet Names (内部オブジェクト名と見出し名) ---
 Public Const SH_CODE_EX_MASTER      As String = "sh_Ex_Master"     ' 経費M (オブジェクト名)
 Public Const SH_NAME_EX_MASTER      As String = "経費M"            ' 経費M (シート名)

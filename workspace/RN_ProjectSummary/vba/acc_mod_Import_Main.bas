@@ -68,8 +68,9 @@ Public Sub Run_Kenmu_Import_EZ(Optional ByVal callingID As Long = 0)
     Dim wsJK As DAO.Workspace: Set wsJK = DBEngine.Workspaces(0)
     wsJK.BeginTrans
     
-    ' 第一工程：暫定テーブルのクリアとインポート
+    ' 第一工程：全ワークテーブルのクリア
     db.Execute "DELETE * FROM [" & AT_KENMU_TEMP & "];", dbFailOnError
+    db.Execute "DELETE * FROM [" & AT_KENMU_MAIN & "];", dbFailOnError
     
     importer.Init db
     importer.TempTableName = AT_KENMU_TEMP
@@ -164,7 +165,7 @@ Private Sub Transcribe_Integrated_Logic(ByRef db As DAO.Database)
     arrMap = Get_TempProject_Map()
     Set objOrg = Get_Org_Dict()
     
-    ' 本番テーブルをクリア
+    ' 本番テーブルのクリア（Run_Kenmu_Import_EZ冒頭で実行済みだが念押し）
     db.Execute "DELETE * FROM [" & AT_KENMU_MAIN & "];", dbFailOnError
     
     Set rsSrc = db.OpenRecordset(AT_KENMU_TEMP, dbOpenSnapshot)
@@ -254,15 +255,9 @@ End Sub
 Private Sub Update_Kenmu_History(ByRef db As DAO.Database)
     Dim strSQL As String
     
-    ' 1. 同一キー（年月+工事コード+社員名+兼務率割合）を持つ既存レコードを削除
+    ' 1. ImportID が一致する既存レコードを削除（転送元勝ち / Overwrite）
     strSQL = "DELETE FROM [" & AT_KENMU_HISTORY & "] " & _
-             "WHERE EXISTS (" & _
-             "  SELECT 1 FROM [" & AT_KENMU_MAIN & "] AS SRC " & _
-             "  WHERE [" & AT_KENMU_HISTORY & "].[年月] = SRC.[年月] " & _
-             "    AND [" & AT_KENMU_HISTORY & "].[工事コード] = SRC.[工事コード] " & _
-             "    AND [" & AT_KENMU_HISTORY & "].[社員名] = SRC.[社員名] " & _
-             "    AND [" & AT_KENMU_HISTORY & "].[兼務率割合] = SRC.[兼務率割合] " & _
-             ")"
+             "WHERE [ImportID] IN (SELECT [ImportID] FROM [" & AT_KENMU_MAIN & "])"
     db.Execute strSQL, dbFailOnError
     
     ' 2. 本番テーブルから累計テーブルへ全件追加

@@ -99,7 +99,10 @@ Public Sub Run_IcubeImport_FullStep()
     wsTrans.CommitTrans
     isInTrans = False
 
-    MsgBox "クラスによる統合インポートが完了しました。", vbInformation
+    ' --- 10. 給与・経費の統合集計を自動更新 ---
+    Call acc_mod_KoguchiAggregationFinalizer.Run_KoguchiStaffExpense_Aggregation(isBatch:=True)
+
+    MsgBox "クラスによる統合インポートおよび最終集計が完了しました。", vbInformation
     Exit Sub
 
 Err_Handler:
