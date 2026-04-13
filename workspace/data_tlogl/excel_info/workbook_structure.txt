@@ -3,7 +3,7 @@ Excel File: data_tlogl.xlsm
 
 ■ Sheet: 内訳og (Object: She01)
   └─ Table: テーブル1
-     Range: $B$6:$W$3847
+     Range: $B$6:$W$3610
      Columns: O-ID, Idpa, ID, 計画対象, 見積-大分類, status, 見積-中分類, 見積-小分類, 大分類, 中分類, 小分類, 番号, ＶＥＣＤ, 部位, 名称, 摘要, 見積数量, 単位, 見積単価, 見積金額, 備考, BELCAコード
 
 ■ Sheet: BELCA (Object: She03)
